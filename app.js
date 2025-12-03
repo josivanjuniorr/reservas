@@ -13,8 +13,6 @@ const ROOM_TYPES = [
   { id: 'casal_quadruplo_exec', name: 'Casal Quádruplo Executivo', category: 'Executivo', total: 2 }
 ];
 
-const STORAGE_KEY = 'hotel_padre_cicero_reservas';
-
 const roomTypeSelect = document.getElementById('roomType');
 const filterType = document.getElementById('filterType');
 const futureSummary = document.getElementById('futureSummary');
@@ -25,20 +23,18 @@ const historyList = document.getElementById('historyList');
 const tabCurrent = document.getElementById('tabCurrent');
 const tabHistory = document.getElementById('tabHistory');
 
-let reservations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let reservations = [];
 let editingId = null;
-let useSupabase = false;
 let sbClient = null;
 
 async function initSupabaseIntegration() {
-  // Prefer our small wrapper `SB` if present (created by supabase-integration.js).
+  // Supabase is now required. Try to use the wrapper first, then fallback to direct init.
   const wrapper = window.SB;
   if (wrapper && wrapper.init) {
     try {
       await wrapper.init();
       if (wrapper.useSupabase) {
         sbClient = wrapper.client || (window.supabase && window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey));
-        useSupabase = true;
         const data = await wrapper.loadAll();
         if (Array.isArray(data)) {
           reservations = data.map(r => ({
@@ -53,18 +49,19 @@ async function initSupabaseIntegration() {
             responsible: r.responsible,
             onClipboard: r.onClipboard || false
           }));
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
         }
         console.log('Loaded reservations from Supabase:', reservations.length);
+        return;
       }
     } catch(e) {
-      console.warn('Supabase wrapper init failed', e);
-      useSupabase = false;
+      console.error('Supabase wrapper init failed', e);
     }
-  } else if (window.SUPABASE_CONFIG && window.supabase) {
+  }
+  
+  // Fallback: direct init
+  if (window.SUPABASE_CONFIG && window.supabase) {
     try {
       sbClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
-      useSupabase = true;
       const { data, error } = await sbClient.from('reservas').select('*');
       if (!error && Array.isArray(data)) {
         reservations = data.map(r => ({
@@ -79,30 +76,30 @@ async function initSupabaseIntegration() {
           responsible: r.responsible,
           onClipboard: r.onClipboard || false
         }));
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
       }
       console.log('Supabase initialized (direct)');
+      return;
     } catch(e) {
-      console.warn('Supabase init failed', e);
-      useSupabase = false;
+      console.error('Supabase init failed', e);
     }
-  } else {
-    // no config — keep using localStorage
-    useSupabase = false;
   }
+  
+  // No config found
+  alert('AVISO: Supabase não configurado. Configure config.js com URL e anon key do Supabase.');
+  console.error('Supabase config missing: Copy config.example.js to config.js and fill in your Supabase credentials.');
 }
 
 async function syncToSupabase() {
-  if (!useSupabase) return;
+  if (!sbClient) return;
   try {
-    // upsert all reservations (simple approach)
     if (window.SB && window.SB.upsertMany) {
       await window.SB.upsertMany(reservations);
-    } else if (sbClient) {
+    } else {
       await sbClient.from('reservas').upsert(reservations, { onConflict: 'id' });
     }
   } catch(e) {
-    console.warn('Supabase sync error', e);
+    console.error('Supabase sync error', e);
+    alert('Erro ao sincronizar com Supabase: ' + (e.message || 'desconhecido'));
   }
 }
 
@@ -130,8 +127,6 @@ function countOccupied(type, date) {
 }
 
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
-  // background sync to Supabase (if configured)
   syncToSupabase();
 }
 
@@ -312,13 +307,16 @@ tabHistory.onclick = function() {
 window.cancelRes = async function(id) {
   if (confirm('Cancelar reserva?')) {
     reservations = reservations.filter(r => r.id !== id);
-    // persist locally
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
-    // remove from Supabase if enabled
-    if (useSupabase && window.SB && window.SB.deleteById) {
-      try { await window.SB.deleteById(id); } catch(e){ console.warn(e); }
-    } else if (useSupabase && sbClient) {
-      try { await sbClient.from('reservas').delete().eq('id', id); } catch(e){ console.warn(e); }
+    try {
+      // Remove from Supabase
+      if (window.SB && window.SB.deleteById) {
+        await window.SB.deleteById(id);
+      } else if (sbClient) {
+        await sbClient.from('reservas').delete().eq('id', id);
+      }
+    } catch(e) {
+      console.error('Error deleting from Supabase', e);
+      alert('Erro ao excluir: ' + (e.message || 'desconhecido'));
     }
     renderReservations(filterType.value, searchInput.value);
     renderAvailability(queryDate.value);
