@@ -152,17 +152,8 @@
   </div>
 </div>
 
-<script>
-  // Attempt to load a `config.js` file if the user created one (silently continues if not found).
-  (function(){
-    var s = document.createElement('script');
-    s.src = 'config.js';
-    s.defer = true;
-    s.onload = function(){ console.log('config.js loaded'); };
-    s.onerror = function(){ console.log('config.js not found; using localStorage fallback'); };
-    document.head.appendChild(s);
-  })();
-</script>
+<!-- Load config.js FIRST (synchronously) so SUPABASE_CONFIG is available before other scripts -->
+<script src="config.js"></script>
 
 <!-- Supabase JS (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
