@@ -1,15 +1,16 @@
 # Reservas (Hotel Padre Cícero)
 
-Este repositório contém uma aplicação simples de gerência de reservas (HTML/CSS/JS). A aplicação agora suporta persistência local via `localStorage` e integração opcional com Supabase para armazenar as reservas em banco de dados.
+Este repositório contém uma aplicação de gerência de reservas (HTML/CSS/JS) que utiliza **Supabase como banco de dados**.
 
-## O que foi adicionado
-- `config.example.js` — modelo para `config.js` contendo `SUPABASE_CONFIG` (URL e anon key).
-- `supabase-integration.js` — pequeno wrapper que inicializa o cliente Supabase e expõe funções (`SB.init`, `SB.loadAll`, `SB.upsertMany`, `SB.deleteById`).
-- `app.js` — atualizado para usar Supabase quando configurado; mantém fallback para `localStorage`.
+## Requisitos
+- Projeto no [Supabase](https://app.supabase.com/) com tabela `reservas` criada.
 
-## Como configurar Supabase
-1. Crie um projeto no https://app.supabase.com/
-2. No SQL Editor, crie a tabela `reservas` com este esquema (exemplo):
+## Como configurar
+
+1. **Crie um projeto no Supabase**:
+   - Acesse https://app.supabase.com/ e crie um novo projeto.
+
+2. **Crie a tabela `reservas`** no SQL Editor:
 
 ```sql
 create table if not exists reservas (
@@ -26,22 +27,33 @@ create table if not exists reservas (
 );
 ```
 
-3. Para desenvolvimento rápido, você pode usar a `anon` key do projeto (não recomendado em produção).
-4. Copie `config.example.js` para `config.js` e preencha `url` e `anonKey` com os valores do seu projeto Supabase.
+3. **Configure `config.js`**:
+   - Copie `config.example.js` para `config.js`.
+   - Preencha `url` e `anonKey` com os valores do seu projeto Supabase:
+     - **URL**: https://app.supabase.com/project/YOUR_PROJECT_REF/settings/api
+     - **Anon Key**: mesma página, seção "Project API keys"
 
-## Regras de segurança (recomendação)
-- Em produção, evite usar a `anon` key com permissões de escrita. Prefira usar autenticação (JWT) ou uma API backend que use a `service_role` key com cuidado e políticas (RLS).
-- Configure Row Level Security (RLS) no Supabase caso precise limitar quem pode ver/alterar reservas.
+4. **Rode o servidor local**:
 
-## Rodando localmente
 ```bash
-# dentro da raiz do repositório
 python3 -m http.server 8000
-# abra http://localhost:8000/ no seu navegador
+# Abra http://localhost:8000/ no navegador
 ```
 
-Se `config.js` existir e estiver correto, a aplicação irá tentar carregar e sincronizar reservas com Supabase; caso contrário, continuará usando `localStorage`.
+A aplicação carregará as reservas de Supabase automaticamente e sincronizará todas as mudanças (add, edit, delete) com o banco de dados.
 
-## Observações
-- Este é um exemplo simples. Para uso real em produção, implemente autenticação e políticas de segurança adequadas, e trate conflitos de concorrência/overbooking com validação no backend.
-- Para depuração, abra o console do navegador para ver mensagens sobre o estado do Supabase.
+## Segurança
+
+Para produção, é **recomendado**:
+- Não usar a `anon` key com permissões de escrita diretas no cliente.
+- Implementar **Row Level Security (RLS)** no Supabase.
+- Usar autenticação (JWT + Supabase Auth) ou um **backend** que use `service_role` key.
+
+## Estrutura de arquivos
+
+- `index.html` — HTML principal, carrega Supabase e scripts.
+- `styles.css` — Estilos da aplicação.
+- `app.js` — Lógica principal (integração Supabase obrigatória).
+- `config.example.js` — Modelo para `config.js` (não commitado).
+- `config.js` — Seu arquivo de configuração (não commitado; use `.gitignore`).
+- `supabase-integration.js` — Wrapper que inicializa o cliente Supabase.
