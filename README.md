@@ -29,9 +29,8 @@ create table if not exists reservas (
 
 3. **Configure `config.js`**:
    - Copie `config.example.js` para `config.js`.
-   - Preencha `url` e `anonKey` com os valores do seu projeto Supabase:
-     - **URL**: https://app.supabase.com/project/YOUR_PROJECT_REF/settings/api
-     - **Anon Key**: mesma página, seção "Project API keys"
+   - Preencha `url` e `anonKey` com os valores do seu projeto Supabase.
+   - **Veja `SUPABASE_SETUP.md` para instruções passo a passo sobre como obter URL e Anon Key.**
 
 4. **Rode o servidor local**:
 
