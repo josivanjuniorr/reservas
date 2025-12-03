@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Reservas Hotel Padre Cícero</title>
+<style>
+:root {
+  --bg: #f4f6fb;
+  --card: #ffffff;
+  --accent: #1b3fa0;
+  --accent-2: #2656d8;
+  --muted: #6b7280;
+  --radius: 10px;
+  --shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+}
+*{box-sizing:border-box;}
+body {
+  margin:0;
+  background: linear-gradient(180deg,#e9edfa 0%,var(--bg) 70%);
+  color:#0f172a;
+  padding:28px;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+}
+.wrap {width:100%; max-width:1100px;}
+header {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:22px;
+}
+.brand {display:flex; align-items:center; gap:14px;}
+.logo {
+  width:62px;
+  height:62px;
+  border-radius:14px;
+  background: linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-weight:800;
+  font-size:18px;
+  box-shadow:var(--shadow);
+}
+h1{margin:0; font-size:22px; color:var(--accent);}
+p.lead{margin:0; color:var(--muted); font-size:13px;}
+.grid {display:grid; grid-template-columns:420px 1fr; gap:22px;}
+.card {
+  background: var(--card);
+  padding:20px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+form .row {display:flex; gap:10px; margin-bottom:12px;}
+label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px;}
+input[type="text"], input[type="tel"], input[type="date"], input[type="number"], select, textarea {
+  width:100%; padding:10px 12px;
+  border:1px solid #e2e8f0;
+  border-radius:8px;
+  font-size:14px;
+  background:white;
+  transition:border-color 0.2s;
+}
+input:focus, textarea:focus, select:focus{border-color:var(--accent); outline:none;}
+textarea{min-height:80px; resize:vertical;}
+.btn {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:8px;
+  border:none;
+  background:var(--accent);
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:background 0.2s;
+}
+.btn:hover{background:var(--accent-2);}
+.btn.ghost{
+  background:transparent;
+  color:var(--accent);
+  border:1px solid rgba(27,63,160,0.25);
+}
+.btn.ghost:hover{background:rgba(27,63,160,0.08);}
+.availability-container{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+.availability-card{
+  background:#f9fbff;
+  border-radius:10px;
+  padding:12px 14px;
+  box-shadow:0 4px 12px rgba(27,63,160,0.08);
+  font-size:13px;
+  width:180px;
+}
+.availability-card h4{margin:0 0 6px 0; color:var(--accent); font-size:14px;}
+.availability-card ul{margin:0; padding-left:20px; list-style:disc;}
+.availability-card ul li{margin-bottom:3px; color:#0f172a;}
+.reservation-card{
+  background:#ffffff;
+  border-radius:10px;
+  box-shadow:0 3px 10px rgba(0,0,0,0.08);
+  padding:10px 12px;
+  margin-bottom:8px;
+  font-size:13px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.reservation-card.today{border:2px solid #1b3fa0;}
+.reservation-card.on-clipboard{background-color:#d9fdd3;} /* verde claro quando na prancheta */
+.reservation-card button{
+  margin-top:4px;
+  font-size:12px;
+  padding:5px 8px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+}
+.reservation-card button.edit-btn{background:#facc15;color:#0f172a;}
+.reservation-card button.prancheta-btn{background:#0f9d58;color:white;}
+.reservation-card button:hover{opacity:0.9;}
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-box input {
+  padding:8px 28px 8px 30px;
+  border:1px solid #e2e8f0;
+  border-radius:8px;
+  font-size:13px;
+}
+.search-box svg {
+  position:absolute;
+  left:8px;
+  width:14px;
+  height:14px;
+  stroke:var(--muted);
+}
+.tab-buttons{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.tab-buttons button{
+  padding:6px 10px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+}
+.tab-buttons button.active{
+  background:var(--accent);
+  color:white;
+}
+@media(max-width:980px){.grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand">
+    <div class="logo">PC</div>
+    <div>
+      <h1>Reservas Hotel Padre Cícero</h1>
+      <p class="lead">Sistema de gestão de reservas e ocupação</p>
+    </div>
+  </div>
+  <div class="muted">Modo demonstração</div>
+</header>
+
+<main class="grid">
+<!-- ESQUERDA -->
+<section class="card">
+<h2 style="color:var(--accent)">Nova Reserva</h2>
+<form id="reservationForm">
+  <div class="row">
+    <div style="flex:1">
+      <label>Nome</label>
+      <input id="guestName" required placeholder="Nome do hóspede">
+    </div>
+    <div style="width:150px">
+      <label>Telefone</label>
+      <input id="phone" placeholder="(xx) xxxxx-xxxx">
+    </div>
+  </div>
+  <div class="row">
+    <div style="flex:1">
+      <label>Tipo de quarto</label>
+      <select id="roomType"></select>
+    </div>
+    <div style="width:120px">
+      <label>Qtd</label>
+      <select><option>1 apto</option></select>
+    </div>
+  </div>
+  <div class="row">
+    <div style="flex:1">
+      <label>Entrada</label>
+      <input type="date" id="startDate" required>
+    </div>
+    <div style="flex:1">
+      <label>Saída</label>
+      <input type="date" id="endDate" required>
+    </div>
+  </div>
+  <div class="row">
+    <div style="flex:1">
+      <label>Responsável</label>
+      <input id="responsible" placeholder="Nome do responsável">
+    </div>
+    <div style="width:150px">
+      <label>Valor (R$)</label>
+      <input type="number" id="price" step="0.01" min="0" placeholder="0,00">
+    </div>
+  </div>
+  <div class="row">
+    <div style="flex:1">
+      <label>Observação</label>
+      <textarea id="notes"></textarea>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;margin-top:12px">
+    <button class="btn" type="submit">Reservar</button>
+    <button class="btn ghost" type="button" id="clearForm">Limpar</button>
+    <div id="formMsg" style="margin-left:10px;font-size:13px"></div>
+  </div>
+
+  <hr style="margin:20px 0;border:0;border-top:1px solid #e8ecef">
+  <h3 style="color:var(--accent)">Consultar reservas por data</h3>
+  <p class="muted" style="margin-bottom:6px">Veja quantos apartamentos estarão disponíveis em uma data futura:</p>
+  <input type="date" id="queryDate" style="padding:10px;width:200px">
+  <div id="futureSummary" class="availability-container"></div>
+</form>
+</section>
+
+<!-- DIREITA -->
+<section class="card">
+<div class="tab-buttons">
+  <button id="tabCurrent" class="active">Reservas Atuais</button>
+  <button id="tabHistory">Histórico de Reservas</button>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+  <div class="search-box">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="Buscar por nome...">
+  </div>
+  <select id="filterType" class="small"><option value="all">Filtrar: Todos</option></select>
+</div>
+<div id="reservationsList" style="margin-top:12px;"></div>
+<div id="historyList" style="margin-top:12px;display:none;"></div>
+</section>
+</main>
+</div>
+
+<!-- Modal de edição -->
+<div id="editModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);justify-content:center;align-items:center;z-index:1000;">
+  <div style="background:white;padding:20px;border-radius:10px;width:320px;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+    <h3 style="margin-top:0;color:#1b3fa0;">Editar Reserva</h3>
+    <form id="editForm">
+      <div style="margin-bottom:8px">
+        <label>Nome</label>
+        <input type="text" id="editName" required>
+      </div>
+      <div style="margin-bottom:8px">
+        <label>Telefone</label>
+        <input type="text" id="editPhone">
+      </div>
+      <div style="margin-bottom:8px">
+        <label>Tipo de quarto</label>
+        <select id="editRoomType"></select>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:8px">
+        <div style="flex:1">
+          <label>Entrada</label>
+          <input type="date" id="editStartDate" required>
+        </div>
+        <div style="flex:1">
+          <label>Saída</label>
+          <input type="date" id="editEndDate" required>
+        </div>
+      </div>
+      <div style="margin-bottom:8px">
+        <label>Responsável</label>
+        <input type="text" id="editResponsible">
+      </div>
+      <div style="margin-bottom:8px">
+        <label>Valor (R$)</label>
+        <input type="number" id="editPrice" step="0.01" min="0">
+      </div>
+      <div style="margin-bottom:8px">
+        <label>Observação</label>
+        <textarea id="editNotes"></textarea>
+      </div>
+      <div style="margin-bottom:8px">
+        <label>Na Prancheta</label>
+        <input type="checkbox" id="editOnClipboard">
+      </div>
+      <button class="btn" type="submit">Salvar Alteração</button>
+      <button type="button" class="btn ghost" onclick="closeEditModal()">Cancelar</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const ROOM_TYPES=[
+  {id:'duplo', name:'Duplo', category:'Standard', total:15},
+  {id:'casal', name:'Casal', category:'Standard', total:17},
+  {id:'solteiro_triplo', name:'Solteiro Triplo', category:'Standard', total:10},
+  {id:'casal_triplo', name:'Casal Triplo', category:'Standard', total:4},
+  {id:'casal_quadruplo', name:'Casal Quádruplo', category:'Standard', total:1},
+  {id:'casal_quintuplo', name:'Casal Quíntuplo', category:'Standard', total:2},
+  {id:'solteiro_quadruplo', name:'Solteiro Quádruplo', category:'Standard', total:1},
+  {id:'casal_execultivo', name:'Casal Execultivo', category:'Executivo', total:14},
+  {id:'solteiro_triplo_exec', name:'Solteiro Triplo Execultivo', category:'Executivo', total:5},
+  {id:'casal_triplo_exec', name:'Casal Triplo Execultivo', category:'Executivo', total:4},
+  {id:'casal_king_exec', name:'Casal King Execultivo', category:'Executivo', total:2},
+  {id:'casal_quadruplo_exec', name:'Casal Quádruplo Execultivo', category:'Executivo', total:2},
+];
+
+const STORAGE_KEY='hotel_padre_cicero_reservas';
+const roomTypeSelect=document.getElementById('roomType');
+const filterType=document.getElementById('filterType');
+const futureSummary=document.getElementById('futureSummary');
+const queryDate=document.getElementById('queryDate');
+const searchInput=document.getElementById('searchInput');
+const reservationsList=document.getElementById('reservationsList');
+const historyList=document.getElementById('historyList');
+const tabCurrent=document.getElementById('tabCurrent');
+const tabHistory=document.getElementById('tabHistory');
+let reservations=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
+let editingId=null;
+
+function parseDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function fmtDate(s){if(!s)return'';const [y,m,d]=s.split('-');return ${d}/${m}/${y};}
+function datesOverlap(a1,a2,b1,b2){return a1<b2&&b1<a2;}
+function countOccupied(type,date){
+  const target=parseDate(date);
+  const next=new Date(target.getTime()+86400000);
+  return reservations.filter(r=>r.roomType===type&&datesOverlap(target,next,parseDate(r.startDate),parseDate(r.endDate))).length;
+}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(reservations));}
+
+function renderAvailability(date){
+  futureSummary.innerHTML='';
+  if(!date) return;
+  const categories=[...new Set(ROOM_TYPES.map(r=>r.category))];
+  categories.forEach(cat=>{
+    const card=document.createElement('div');
+    card.className='availability-card';
+    const catRooms=ROOM_TYPES.filter(r=>r.category===cat);
+    card.innerHTML=<h4>${cat}</h4>;
+    const ul=document.createElement('ul');
+    catRooms.forEach(r=>{
+      const occ=countOccupied(r.id,date);
+      const available=r.total-occ;
+      const li=document.createElement('li');
+      li.textContent=${r.name}: ${available} disponíveis;
+      ul.appendChild(li);
+    });
+    card.appendChild(ul);
+    futureSummary.appendChild(card);
+  });
+}
+
+function renderReservations(filter='all', search=''){
+  reservationsList.innerHTML='';
+  historyList.innerHTML='';
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const lowerSearch=search.toLowerCase();
+
+  reservations.forEach(r=>{
+    const start = parseDate(r.startDate);
+    const targetList = start < today ? historyList : reservationsList;
+
+    if(filter!=='all' && r.roomType!==filter && targetList===reservationsList) return;
+    if(lowerSearch && !r.guestName.toLowerCase().includes(lowerSearch) && targetList===reservationsList) return;
+
+    const div=document.createElement('div');
+    div.className='reservation-card';
+    if(start.getTime()===today.getTime()) div.classList.add('today');
+    if(r.onClipboard) div.classList.add('on-clipboard'); // adiciona fundo verde
+
+    div.innerHTML=`
+      <h4>${r.guestName} (${r.phone||''})</h4>
+      <div>Responsável: ${r.responsible||'-'}</div>
+      <div>${ROOM_TYPES.find(rt=>rt.id===r.roomType)?.name || r.roomType}</div>
+      <div>${fmtDate(r.startDate)} ➜ ${fmtDate(r.endDate)}</div>
+      <div>R$ ${r.price ? Number(r.price).toFixed(2).replace('.',',') : '-'}</div>
+      <div>${r.notes||''}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="edit-btn" onclick="editRes('${r.id}')">Editar</button>
+        <button onclick="cancelRes('${r.id}')">Excluir</button>
+        <button class="prancheta-btn" onclick="toggleClipboard('${r.id}')">${r.onClipboard?'✔ Na Prancheta':'Marcar Prancheta'}</button>
+      </div>`;
+    targetList.appendChild(div);
+  });
+}
+
+// Event listeners
+document.getElementById('reservationForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=document.getElementById('guestName').value.trim();
+  const phone=document.getElementById('phone').value.trim();
+  const type=roomTypeSelect.value;
+  const s=document.getElementById('startDate').value;
+  const eDate=document.getElementById('endDate').value;
+  const notes=document.getElementById('notes').value.trim();
+  const price=document.getElementById('price').value;
+  const responsible=document.getElementById('responsible').value.trim();
+  const msg=document.getElementById('formMsg');
+  if(!name||!s||!eDate){msg.textContent='Preencha todos os campos obrigatórios';msg.style.color='red';return;}
+  if(parseDate(s)>=parseDate(eDate)){msg.textContent='Saída deve ser após entrada';msg.style.color='red';return;}
+  reservations.push({id:Math.random().toString(36).slice(2),guestName:name,phone,roomType:type,startDate:s,endDate:eDate,notes,price,responsible,onClipboard:false});
+  save();renderReservations(filterType.value,searchInput.value);renderAvailability(queryDate.value);
+  msg.textContent='Reserva salva com sucesso!';msg.style.color='green';
+  setTimeout(()=>msg.textContent='',2000);e.target.reset();
+});
+
+document.getElementById('clearForm').onclick=()=>document.getElementById('reservationForm').reset();
+queryDate.onchange=()=>renderAvailability(queryDate.value);
+searchInput.oninput=()=>renderReservations(filterType.value,searchInput.value);
+
+tabCurrent.onclick=()=>{
+  tabCurrent.classList.add('active');
+  tabHistory.classList.remove('active');
+  reservationsList.style.display='block';
+  historyList.style.display='none';
+};
+
+tabHistory.onclick=()=>{
+  tabHistory.classList.add('active');
+  tabCurrent.classList.remove('active');
+  reservationsList.style.display='none';
+  historyList.style.display='block';
+};
+
+window.cancelRes=id=>{if(confirm('Cancelar reserva?')){
+  reservations=reservations.filter(r=>r.id!==id);save();renderReservations(filterType.value,searchInput.value);renderAvailability(queryDate.value);
+}}
+
+function toggleClipboard(id){
+  const r=reservations.find(r=>r.id===id);
+  if(!r) return;
+  r.onClipboard=!r.onClipboard;
+  save();renderReservations(filterType.value,searchInput.value);
+}
+
+function editRes(id){
+  const r=reservations.find(r=>r.id===id);
+  if(!r) return;
+  editingId=id;
+  document.getElementById('editName').value=r.guestName;
+  document.getElementById('editPhone').value=r.phone;
+  document.getElementById('editRoomType').value=r.roomType;
+  document.getElementById('editStartDate').value=r.startDate;
+  document.getElementById('editEndDate').value=r.endDate;
+  document.getElementById('editPrice').value=r.price;
+  document.getElementById('editNotes').value=r.notes;
+  document.getElementById('editResponsible').value=r.responsible;
+  document.getElementById('editOnClipboard').checked=r.onClipboard;
+  document.getElementById('editModal').style.display='flex';
+}
+
+function closeEditModal(){
+  document.getElementById('editModal').style.display='none';
+  editingId=null;
+}
+
+document.getElementById('editForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  if(!editingId) return;
+  const r=reservations.find(r=>r.id===editingId);
+  if(!r) return;
+  r.guestName=document.getElementById('editName').value.trim();
+  r.phone=document.getElementById('editPhone').value.trim();
+  r.roomType=document.getElementById('editRoomType').value;
+  r.startDate=document.getElementById('editStartDate').value;
+  r.endDate=document.getElementById('editEndDate').value;
+  r.responsible=document.getElementById('editResponsible').value.trim();
+  r.price=document.getElementById('editPrice').value;
+  r.notes=document.getElementById('editNotes').value.trim();
+  r.onClipboard=document.getElementById('editOnClipboard').checked;
+  save();
+  renderReservations(filterType.value,searchInput.value);
+  renderAvailability(queryDate.value);
+  closeEditModal();
+});
+
+ROOM_TYPES.forEach(rt=>{
+  roomTypeSelect.insertAdjacentHTML('beforeend',<option value="${rt.id}">${rt.name}</option>);
+  document.getElementById('editRoomType').insertAdjacentHTML('beforeend',<option value="${rt.id}">${rt.name}</option>);
+  filterType.insertAdjacentHTML('beforeend',<option value="${rt.id}">${rt.name}</option>);
+});
+
+renderReservations();
+</script>
+</body>
+</html>
