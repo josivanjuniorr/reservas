@@ -343,7 +343,7 @@ let reservations=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');
 let editingId=null;
 
 function parseDate(s){const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
-function fmtDate(s){if(!s)return'';const [y,m,d]=s.split('-');return ${d}/${m}/${y};}
+function fmtDate(s){if(!s)return'';const [y,m,d]=s.split('-');return `${d}/${m}/${y}`;}
 function datesOverlap(a1,a2,b1,b2){return a1<b2&&b1<a2;}
 function countOccupied(type,date){
   const target=parseDate(date);
@@ -360,13 +360,13 @@ function renderAvailability(date){
     const card=document.createElement('div');
     card.className='availability-card';
     const catRooms=ROOM_TYPES.filter(r=>r.category===cat);
-    card.innerHTML=<h4>${cat}</h4>;
+    card.innerHTML=`<h4>${cat}</h4>`;
     const ul=document.createElement('ul');
     catRooms.forEach(r=>{
       const occ=countOccupied(r.id,date);
       const available=r.total-occ;
       const li=document.createElement('li');
-      li.textContent=${r.name}: ${available} disponíveis;
+      li.textContent=`${r.name}: ${available} disponíveis`;
       ul.appendChild(li);
     });
     card.appendChild(ul);
@@ -501,9 +501,9 @@ document.getElementById('editForm').addEventListener('submit',e=>{
 });
 
 ROOM_TYPES.forEach(rt=>{
-  roomTypeSelect.insertAdjacentHTML('beforeend',<option value="${rt.id}">${rt.name}</option>);
-  document.getElementById('editRoomType').insertAdjacentHTML('beforeend',<option value="${rt.id}">${rt.name}</option>);
-  filterType.insertAdjacentHTML('beforeend',<option value="${rt.id}">${rt.name}</option>);
+  roomTypeSelect.insertAdjacentHTML('beforeend',`<option value="${rt.id}">${rt.name}</option>`);
+  document.getElementById('editRoomType').insertAdjacentHTML('beforeend',`<option value="${rt.id}">${rt.name}</option>`);
+  filterType.insertAdjacentHTML('beforeend',`<option value="${rt.id}">${rt.name}</option>`);
 });
 
 renderReservations();
