@@ -27,6 +27,84 @@ const tabHistory = document.getElementById('tabHistory');
 
 let reservations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 let editingId = null;
+let useSupabase = false;
+let sbClient = null;
+
+async function initSupabaseIntegration() {
+  // Prefer our small wrapper `SB` if present (created by supabase-integration.js).
+  const wrapper = window.SB;
+  if (wrapper && wrapper.init) {
+    try {
+      await wrapper.init();
+      if (wrapper.useSupabase) {
+        sbClient = wrapper.client || (window.supabase && window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey));
+        useSupabase = true;
+        const data = await wrapper.loadAll();
+        if (Array.isArray(data)) {
+          reservations = data.map(r => ({
+            id: r.id,
+            guestName: r.guestName,
+            phone: r.phone,
+            roomType: r.roomType,
+            startDate: r.startDate,
+            endDate: r.endDate,
+            notes: r.notes,
+            price: r.price,
+            responsible: r.responsible,
+            onClipboard: r.onClipboard || false
+          }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+        }
+        console.log('Loaded reservations from Supabase:', reservations.length);
+      }
+    } catch(e) {
+      console.warn('Supabase wrapper init failed', e);
+      useSupabase = false;
+    }
+  } else if (window.SUPABASE_CONFIG && window.supabase) {
+    try {
+      sbClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+      useSupabase = true;
+      const { data, error } = await sbClient.from('reservas').select('*');
+      if (!error && Array.isArray(data)) {
+        reservations = data.map(r => ({
+          id: r.id,
+          guestName: r.guestName,
+          phone: r.phone,
+          roomType: r.roomType,
+          startDate: r.startDate,
+          endDate: r.endDate,
+          notes: r.notes,
+          price: r.price,
+          responsible: r.responsible,
+          onClipboard: r.onClipboard || false
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+      }
+      console.log('Supabase initialized (direct)');
+    } catch(e) {
+      console.warn('Supabase init failed', e);
+      useSupabase = false;
+    }
+  } else {
+    // no config — keep using localStorage
+    useSupabase = false;
+  }
+}
+
+async function syncToSupabase() {
+  if (!useSupabase) return;
+  try {
+    // upsert all reservations (simple approach)
+    if (window.SB && window.SB.upsertMany) {
+      await window.SB.upsertMany(reservations);
+    } else if (sbClient) {
+      await sbClient.from('reservas').upsert(reservations, { onConflict: 'id' });
+    }
+  } catch(e) {
+    console.warn('Supabase sync error', e);
+  }
+}
 
 function parseDate(s) {
   const [y, m, d] = s.split('-').map(Number);
@@ -53,6 +131,8 @@ function countOccupied(type, date) {
 
 function save() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+  // background sync to Supabase (if configured)
+  syncToSupabase();
 }
 
 function renderAvailability(date) {
@@ -229,10 +309,17 @@ tabHistory.onclick = function() {
   historyList.style.display = 'block';
 };
 
-window.cancelRes = function(id) {
+window.cancelRes = async function(id) {
   if (confirm('Cancelar reserva?')) {
     reservations = reservations.filter(r => r.id !== id);
-    save();
+    // persist locally
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reservations));
+    // remove from Supabase if enabled
+    if (useSupabase && window.SB && window.SB.deleteById) {
+      try { await window.SB.deleteById(id); } catch(e){ console.warn(e); }
+    } else if (useSupabase && sbClient) {
+      try { await sbClient.from('reservas').delete().eq('id', id); } catch(e){ console.warn(e); }
+    }
     renderReservations(filterType.value, searchInput.value);
     renderAvailability(queryDate.value);
   }
@@ -306,4 +393,7 @@ ROOM_TYPES.forEach(rt => {
   filterType.appendChild(opt3);
 });
 
-renderReservations();
+(async function() {
+  await initSupabaseIntegration();
+  renderReservations();
+})();
