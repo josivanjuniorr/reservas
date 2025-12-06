@@ -28,11 +28,17 @@ CREATE INDEX IF NOT EXISTS idx_audit_action ON reservas_audit(action);
 -- 3. Habilitar RLS na tabela de auditoria
 ALTER TABLE reservas_audit ENABLE ROW LEVEL SECURITY;
 
--- 4. Política para ler histórico de auditoria (todos usuários autenticados)
+-- 4. Políticas para auditoria
 CREATE POLICY "Usuários autenticados podem ler auditoria" ON reservas_audit
   FOR SELECT
   TO authenticated
   USING (true);
+
+-- Permitir que triggers insiram registros de auditoria (SECURITY DEFINER resolve isso, mas garantir política)
+CREATE POLICY "Sistema pode inserir auditoria" ON reservas_audit
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
 
 -- 5. Função para registrar criação de reserva
 CREATE OR REPLACE FUNCTION audit_reserva_created()
@@ -71,20 +77,20 @@ BEGIN
   -- Definir updated_by automaticamente
   NEW.updated_by := auth.uid();
   
-  -- Detectar campos alterados
-  IF OLD.guestName IS DISTINCT FROM NEW.guestName THEN
+  -- Detectar campos alterados (usando aspas duplas para nomes de colunas)
+  IF OLD."guestName" IS DISTINCT FROM NEW."guestName" THEN
     changed_fields := changed_fields || jsonb_build_object('guestName', true);
   END IF;
   IF OLD.phone IS DISTINCT FROM NEW.phone THEN
     changed_fields := changed_fields || jsonb_build_object('phone', true);
   END IF;
-  IF OLD.roomType IS DISTINCT FROM NEW.roomType THEN
+  IF OLD."roomType" IS DISTINCT FROM NEW."roomType" THEN
     changed_fields := changed_fields || jsonb_build_object('roomType', true);
   END IF;
-  IF OLD.startDate IS DISTINCT FROM NEW.startDate THEN
+  IF OLD."startDate" IS DISTINCT FROM NEW."startDate" THEN
     changed_fields := changed_fields || jsonb_build_object('startDate', true);
   END IF;
-  IF OLD.endDate IS DISTINCT FROM NEW.endDate THEN
+  IF OLD."endDate" IS DISTINCT FROM NEW."endDate" THEN
     changed_fields := changed_fields || jsonb_build_object('endDate', true);
   END IF;
   IF OLD.price IS DISTINCT FROM NEW.price THEN
@@ -96,7 +102,7 @@ BEGIN
   IF OLD.notes IS DISTINCT FROM NEW.notes THEN
     changed_fields := changed_fields || jsonb_build_object('notes', true);
   END IF;
-  IF OLD.onClipboard IS DISTINCT FROM NEW.onClipboard THEN
+  IF OLD."onClipboard" IS DISTINCT FROM NEW."onClipboard" THEN
     changed_fields := changed_fields || jsonb_build_object('onClipboard', true);
   END IF;
   
