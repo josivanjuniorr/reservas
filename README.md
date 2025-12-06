@@ -2,64 +2,50 @@
 
 Este repositório contém uma aplicação de gerência de reservas (HTML/CSS/JS) que utiliza **Supabase como banco de dados**.
 
-## 🚀 Como Configurar
+## 🚀 Configuração do Supabase
 
-### 1. Configure o Supabase
+⚠️ **IMPORTANTE**: Se você está vendo o aviso "Supabase não configurado", siga os passos abaixo:
 
-1. Acesse https://app.supabase.com/ e faça login
-2. Crie um novo projeto ou selecione um existente
-3. Vá para **Settings** > **API** e copie:
-   - **Project URL** (ex: `https://xxxxx.supabase.co`)
-   - **Anon Key** (chave pública)
+### Passo 1: Criar a Tabela no Banco de Dados
 
-### 2. Crie a Tabela no Banco de Dados
+1. Acesse seu projeto Supabase: https://app.supabase.com/project/abcjhhzqyknvgashtpbm
+2. Vá para **SQL Editor** (ícone de banco de dados no menu lateral)
+3. Clique em **New Query**
+4. Copie o conteúdo do arquivo [`database.sql`](./database.sql) deste repositório
+5. Cole no editor e clique em **Run** (ou pressione Ctrl+Enter)
+6. Aguarde a mensagem de sucesso ✅
 
-1. No Supabase, vá para **SQL Editor**
-2. Abra o arquivo `database.sql` deste repositório
-3. Copie todo o conteúdo e cole no SQL Editor
-4. Clique em **Run** para executar o script
-5. A tabela `reservas` será criada com as políticas de segurança
+### Passo 2: Verificar a Configuração
 
-### 3. Configure as Credenciais
+O arquivo `config.js` já está configurado com suas credenciais:
+- URL: `https://abcjhhzqyknvgashtpbm.supabase.co`
+- Anon Key: Configurada ✅
 
-1. Abra o arquivo `config.js`
-2. Substitua `url` e `anonKey` pelos valores copiados:
+### Passo 3: Testar a Aplicação
 
-```javascript
-window.SUPABASE_CONFIG = {
-  url: 'https://SEU_PROJECT_REF.supabase.co',
-  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-};
-```
+Após criar a tabela, recarregue a página da aplicação. O aviso não deve mais aparecer.
 
-### 4. Teste Localmente
-
-Abra o arquivo `index.html` em um navegador ou use um servidor local:
-
-```bash
-# Com Python 3
-python3 -m http.server 8000
-
-# Com Node.js
-npx serve
-```
-
-## 📦 Estrutura do Projeto
+## 📁 Estrutura do Projeto
 
 - `index.html` - Interface principal
-- `styles.css` - Estilos da aplicação
-- `app.js` - Lógica de negócios e interação
+- `app.js` - Lógica de negócios
 - `supabase-integration.js` - Integração com Supabase
-- `config.js` - Configuração (URL e chave do Supabase)
+- `config.js` - Credenciais do Supabase (já configurado)
 - `database.sql` - Script SQL para criar a tabela
+- `styles.css` - Estilos da aplicação
 
-## 🌐 Deploy
+## 🌐 Acesso
 
-O site está publicado em: https://josivanjuniorr.github.io/reservas/
+Site publicado: **https://josivanjuniorr.github.io/reservas/**
 
-## ⚠️ Segurança
+## ❓ Resolução de Problemas
 
-- A `anonKey` é pública e pode ser compartilhada
-- As políticas RLS (Row Level Security) protegem os dados
-- Para produção, considere adicionar autenticação de usuários
+**Problema**: Aviso "Supabase não configurado"
+- **Solução**: Execute o script `database.sql` no SQL Editor do Supabase (Passo 1 acima)
+
+**Problema**: Erro ao salvar reservas
+- **Solução**: Verifique se a tabela `reservas` existe no banco de dados
+- Verifique o console do navegador (F12) para detalhes do erro
+
+
 
