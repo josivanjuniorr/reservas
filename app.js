@@ -90,16 +90,23 @@ async function initSupabaseIntegration() {
 }
 
 async function syncToSupabase() {
-  if (!sbClient) return;
+  if (!sbClient) {
+    console.warn('Supabase client não inicializado');
+    return;
+  }
   try {
+    console.log('Sincronizando', reservations.length, 'reservas com Supabase...');
     if (window.SB && window.SB.upsertMany) {
       await window.SB.upsertMany(reservations);
     } else {
-      await sbClient.from('reservas').upsert(reservations, { onConflict: 'id' });
+      const { error } = await sbClient.from('reservas').upsert(reservations, { onConflict: 'id' });
+      if (error) throw error;
     }
+    console.log('✅ Sincronização com Supabase concluída com sucesso');
   } catch(e) {
-    console.error('Supabase sync error', e);
+    console.error('❌ Erro ao sincronizar com Supabase:', e);
     alert('Erro ao sincronizar com Supabase: ' + (e.message || 'desconhecido'));
+    throw e;
   }
 }
 
@@ -126,8 +133,8 @@ function countOccupied(type, date) {
   ).length;
 }
 
-function save() {
-  syncToSupabase();
+async function save() {
+  await syncToSupabase();
 }
 
 function renderAvailability(date) {
@@ -232,7 +239,7 @@ function renderReservations(filter, search) {
   });
 }
 
-document.getElementById('reservationForm').addEventListener('submit', function(e) {
+document.getElementById('reservationForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const name = document.getElementById('guestName').value.trim();
   const phone = document.getElementById('phone').value.trim();
@@ -269,7 +276,7 @@ document.getElementById('reservationForm').addEventListener('submit', function(e
     onClipboard: false
   });
   
-  save();
+  await save();
   renderReservations(filterType.value, searchInput.value);
   renderAvailability(queryDate.value);
   msg.textContent = 'Reserva salva com sucesso!';
@@ -323,11 +330,11 @@ window.cancelRes = async function(id) {
   }
 };
 
-function toggleClipboard(id) {
+async function toggleClipboard(id) {
   const r = reservations.find(r => r.id === id);
   if (!r) return;
   r.onClipboard = !r.onClipboard;
-  save();
+  await save();
   renderReservations(filterType.value, searchInput.value);
 }
 
@@ -352,7 +359,7 @@ function closeEditModal() {
   editingId = null;
 }
 
-document.getElementById('editForm').addEventListener('submit', function(e) {
+document.getElementById('editForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   if (!editingId) return;
   const r = reservations.find(r => r.id === editingId);
@@ -368,7 +375,7 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
   r.notes = document.getElementById('editNotes').value.trim();
   r.onClipboard = document.getElementById('editOnClipboard').checked;
   
-  save();
+  await save();
   renderReservations(filterType.value, searchInput.value);
   renderAvailability(queryDate.value);
   closeEditModal();
