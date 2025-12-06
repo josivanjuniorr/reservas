@@ -2,26 +2,32 @@
 -- Execute este script no SQL Editor do Supabase:
 -- https://app.supabase.com/project/YOUR_PROJECT/editor
 
--- Criar a tabela reservas
+-- IMPORTANTE: PostgreSQL converte nomes não-quoted para lowercase
+-- Use aspas duplas para preservar camelCase
+
+-- Remover tabela existente se necessário (CUIDADO: apaga dados!)
+-- DROP TABLE IF EXISTS reservas CASCADE;
+
+-- Criar a tabela reservas com nomes de colunas entre aspas para preservar camelCase
 CREATE TABLE IF NOT EXISTS reservas (
   id TEXT PRIMARY KEY,
-  guestName TEXT NOT NULL,
+  "guestName" TEXT NOT NULL,
   phone TEXT,
-  roomType TEXT NOT NULL,
-  startDate DATE NOT NULL,
-  endDate DATE NOT NULL,
+  "roomType" TEXT NOT NULL,
+  "startDate" DATE NOT NULL,
+  "endDate" DATE NOT NULL,
   notes TEXT,
   price NUMERIC(10, 2),
   responsible TEXT,
-  onClipboard BOOLEAN DEFAULT false,
+  "onClipboard" BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Criar índices para melhorar performance
-CREATE INDEX IF NOT EXISTS idx_reservas_dates ON reservas(startDate, endDate);
-CREATE INDEX IF NOT EXISTS idx_reservas_roomType ON reservas(roomType);
-CREATE INDEX IF NOT EXISTS idx_reservas_guestName ON reservas(guestName);
+CREATE INDEX IF NOT EXISTS idx_reservas_dates ON reservas("startDate", "endDate");
+CREATE INDEX IF NOT EXISTS idx_reservas_roomType ON reservas("roomType");
+CREATE INDEX IF NOT EXISTS idx_reservas_guestName ON reservas("guestName");
 
 -- Habilitar Row Level Security (RLS)
 ALTER TABLE reservas ENABLE ROW LEVEL SECURITY;
