@@ -449,13 +449,22 @@ textarea {
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
-.reservation-card button:not(.edit-btn):not(.prancheta-btn) {
+.reservation-card button:not(.edit-btn):not(.prancheta-btn):not(.history-btn) {
   background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
   color: white;
 }
 
-.reservation-card button:not(.edit-btn):not(.prancheta-btn):hover {
+.reservation-card button:not(.edit-btn):not(.prancheta-btn):not(.history-btn):hover {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.reservation-card button.history-btn {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: white;
+}
+
+.reservation-card button.history-btn:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .search-box {
@@ -530,7 +539,8 @@ textarea {
 }
 
 /* Modal Styles */
-#editModal {
+#editModal,
+#historyModal {
   position: fixed;
   top: 0;
   left: 0;
@@ -545,12 +555,17 @@ textarea {
   padding: 20px;
 }
 
-#editModal .card {
+#editModal .card,
+#historyModal .card {
   max-width: 600px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   animation: modalSlideIn 0.3s ease;
+}
+
+#historyModal .card {
+  max-width: 700px;
 }
 
 @keyframes modalSlideIn {
@@ -562,6 +577,69 @@ textarea {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* History Timeline Styles */
+.history-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.history-item {
+  background: var(--bg);
+  border-left: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.history-item:hover {
+  background: var(--accent-light);
+  transform: translateX(4px);
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-action {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.history-date {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.history-user {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.history-changes {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.field-tag {
+  display: inline-block;
+  background: var(--accent);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 2px;
 }
 
 /* Scrollbar Styles */

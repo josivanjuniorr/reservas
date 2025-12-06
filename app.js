@@ -236,6 +236,30 @@ function renderReservations(filter, search) {
     notes.textContent = r.notes || '';
     div.appendChild(notes);
 
+    // Informações de auditoria
+    if (r.created_by || r.updated_by) {
+      const auditDiv = document.createElement('div');
+      auditDiv.style.fontSize = '11px';
+      auditDiv.style.color = 'var(--muted)';
+      auditDiv.style.marginTop = '8px';
+      auditDiv.style.paddingTop = '8px';
+      auditDiv.style.borderTop = '1px solid var(--border)';
+      
+      let auditText = '';
+      if (r.created_at) {
+        const createdDate = new Date(r.created_at).toLocaleString('pt-BR');
+        auditText += `📝 Criado: ${createdDate}`;
+      }
+      if (r.updated_at && r.updated_at !== r.created_at) {
+        const updatedDate = new Date(r.updated_at).toLocaleString('pt-BR');
+        auditText += auditText ? '<br>' : '';
+        auditText += `✏️ Atualizado: ${updatedDate}`;
+      }
+      
+      auditDiv.innerHTML = auditText;
+      div.appendChild(auditDiv);
+    }
+
     const buttonsDiv = document.createElement('div');
     buttonsDiv.style.display = 'flex';
     buttonsDiv.style.gap = '6px';
@@ -257,6 +281,13 @@ function renderReservations(filter, search) {
     clipBtn.textContent = clipText;
     clipBtn.onclick = function() { toggleClipboard(r.id); };
     buttonsDiv.appendChild(clipBtn);
+    
+    // Botão de histórico
+    const historyBtn = document.createElement('button');
+    historyBtn.className = 'history-btn';
+    historyBtn.textContent = '📜 Histórico';
+    historyBtn.onclick = function() { showHistory(r.id); };
+    buttonsDiv.appendChild(historyBtn);
 
     div.appendChild(buttonsDiv);
     targetList.appendChild(div);
@@ -393,6 +424,83 @@ function editRes(id) {
 function closeEditModal() {
   document.getElementById('editModal').style.display = 'none';
   editingId = null;
+}
+
+function closeHistoryModal() {
+  document.getElementById('historyModal').style.display = 'none';
+}
+
+// Mostrar histórico de uma reserva
+async function showHistory(reservaId) {
+  const modal = document.getElementById('historyModal');
+  const content = document.getElementById('historyContent');
+  
+  if (!sbClient) {
+    alert('Cliente Supabase não inicializado');
+    return;
+  }
+  
+  content.innerHTML = '<div style="text-align:center;padding:20px;">🔄 Carregando histórico...</div>';
+  modal.style.display = 'flex';
+  
+  try {
+    // Buscar histórico da reserva
+    const { data, error } = await sbClient
+      .from('reservas_audit')
+      .select('*')
+      .eq('reserva_id', reservaId)
+      .order('timestamp', { ascending: false });
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      content.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">📋 Nenhum histórico encontrado</div>';
+      return;
+    }
+    
+    // Renderizar histórico
+    let html = '<div class="history-timeline">';
+    
+    data.forEach((entry, index) => {
+      const date = new Date(entry.timestamp).toLocaleString('pt-BR');
+      const actionText = {
+        'INSERT': '✨ Criado',
+        'UPDATE': '✏️ Editado',
+        'DELETE': '🗑️ Excluído'
+      }[entry.action] || entry.action;
+      
+      html += `
+        <div class="history-item">
+          <div class="history-header">
+            <span class="history-action">${actionText}</span>
+            <span class="history-date">${date}</span>
+          </div>
+          <div class="history-user">
+            👤 ${entry.user_email || 'Usuário desconhecido'}
+          </div>
+      `;
+      
+      // Mostrar campos alterados
+      if (entry.action === 'UPDATE' && entry.changed_fields) {
+        const fields = Object.keys(entry.changed_fields);
+        if (fields.length > 0) {
+          html += '<div class="history-changes">';
+          html += '<strong>Campos alterados:</strong> ';
+          html += fields.map(f => `<span class="field-tag">${f}</span>`).join(' ');
+          html += '</div>';
+        }
+      }
+      
+      html += '</div>';
+    });
+    
+    html += '</div>';
+    content.innerHTML = html;
+    
+  } catch (e) {
+    console.error('Erro ao carregar histórico:', e);
+    content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--danger)">❌ Erro ao carregar histórico: ${e.message}</div>`;
+  }
 }
 
 document.getElementById('editForm').addEventListener('submit', async function(e) {
