@@ -8,8 +8,78 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="auth.css">
 </head>
 <body>
+
+<!-- Tela de Login -->
+<div id="loginScreen" style="display:none;">
+  <div class="login-container">
+    <div class="login-header">
+      <div class="login-logo">PC</div>
+      <h2>Hotel Padre Cícero</h2>
+      <p>Sistema de Gestão de Reservas</p>
+    </div>
+    
+    <div class="login-body">
+      <!-- Formulário de Login -->
+      <div id="loginForm" class="login-form">
+        <div class="error-message" id="loginError"></div>
+        
+        <div class="form-group">
+          <label>📧 Email</label>
+          <input type="email" id="loginEmail" placeholder="seu@email.com" required autocomplete="email">
+        </div>
+        
+        <div class="form-group">
+          <label>🔒 Senha</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        
+        <button type="button" onclick="handleLogin()" class="btn-primary">🔓 Entrar</button>
+        
+        <div class="divider">OU</div>
+        
+        <button type="button" onclick="Auth.toggleMode()" class="btn-secondary">
+          ✨ Criar nova conta
+        </button>
+      </div>
+      
+      <!-- Formulário de Cadastro -->
+      <div id="signupForm" class="login-form" style="display:none;">
+        <div class="error-message" id="signupError"></div>
+        <div class="success-message" id="signupSuccess"></div>
+        
+        <div class="form-group">
+          <label>👤 Nome Completo</label>
+          <input type="text" id="signupName" placeholder="Seu nome completo" required autocomplete="name">
+        </div>
+        
+        <div class="form-group">
+          <label>📧 Email</label>
+          <input type="email" id="signupEmail" placeholder="seu@email.com" required autocomplete="email">
+        </div>
+        
+        <div class="form-group">
+          <label>🔒 Senha</label>
+          <input type="password" id="signupPassword" placeholder="••••••••" required autocomplete="new-password" minlength="6">
+          <small style="color:var(--muted);font-size:12px">Mínimo 6 caracteres</small>
+        </div>
+        
+        <button type="button" onclick="handleSignup()" class="btn-primary">🎉 Criar Conta</button>
+        
+        <div class="divider">OU</div>
+        
+        <button type="button" onclick="Auth.toggleMode()" class="btn-secondary">
+          🔙 Voltar ao login
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Aplicação Principal -->
+<div id="appScreen" style="display:none;">
 <div class="wrap">
 <header>
   <div class="brand">
@@ -19,7 +89,7 @@
       <p class="lead">Sistema de Gestão de Reservas</p>
     </div>
   </div>
-  <div class="muted">✨ Versão 2.0</div>
+  <div id="userInfo"></div>
 </header>
 
 <main class="grid">
@@ -157,6 +227,8 @@
     </form>
   </div>
 </div>
+</div>
+<!-- Fim do appScreen -->
 
 <!-- Load config FIRST (synchronously) so SUPABASE_CONFIG is available before other scripts -->
 <script src="config.js"></script>
@@ -165,6 +237,82 @@
 <!-- Supabase JS (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
 <script src="supabase-integration.js"></script>
+<script src="auth.js"></script>
 <script src="app.js"></script>
+
+<script>
+// Handlers de Login
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorDiv = document.getElementById('loginError');
+  
+  if (!email || !password) {
+    errorDiv.textContent = '❌ Preencha todos os campos';
+    errorDiv.classList.add('show');
+    return;
+  }
+  
+  errorDiv.classList.remove('show');
+  
+  const result = await Auth.login(email, password);
+  
+  if (!result.success) {
+    errorDiv.textContent = '❌ ' + (result.error || 'Erro ao fazer login');
+    errorDiv.classList.add('show');
+  }
+}
+
+async function handleSignup() {
+  const name = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const password = document.getElementById('signupPassword').value;
+  const errorDiv = document.getElementById('signupError');
+  const successDiv = document.getElementById('signupSuccess');
+  
+  errorDiv.classList.remove('show');
+  successDiv.classList.remove('show');
+  
+  if (!name || !email || !password) {
+    errorDiv.textContent = '❌ Preencha todos os campos';
+    errorDiv.classList.add('show');
+    return;
+  }
+  
+  if (password.length < 6) {
+    errorDiv.textContent = '❌ A senha deve ter no mínimo 6 caracteres';
+    errorDiv.classList.add('show');
+    return;
+  }
+  
+  const result = await Auth.signup(email, password, name);
+  
+  if (result.success) {
+    if (result.needsConfirmation) {
+      successDiv.textContent = '✅ ' + result.message;
+      successDiv.classList.add('show');
+    }
+  } else {
+    errorDiv.textContent = '❌ ' + (result.error || 'Erro ao criar conta');
+    errorDiv.classList.add('show');
+  }
+}
+
+// Permitir login com Enter
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('loginEmail')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+  });
+  
+  document.getElementById('loginPassword')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleLogin();
+  });
+  
+  document.getElementById('signupPassword')?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSignup();
+  });
+});
+</script>
+
 </body>
 </html>

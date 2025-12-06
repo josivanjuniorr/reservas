@@ -474,3 +474,18 @@ ROOM_TYPES.forEach(rt => {
   
   console.log('💡 Dica: Execute window.testSupabase() no console para testar a conexão');
 })();
+
+// Inicializar autenticação quando o DOM estiver pronto
+(async function initApp() {
+  // Aguardar inicialização do Supabase
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Inicializar autenticação
+  const isAuth = await Auth.init();
+  
+  if (!isAuth) {
+    console.log('ℹ️ Usuário não autenticado - mostrando login');
+  } else {
+    console.log('✅ Usuário autenticado - carregando aplicação');
+  }
+})();
