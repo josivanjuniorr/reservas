@@ -152,8 +152,9 @@
   </div>
 </div>
 
-<!-- Load config.js FIRST (synchronously) so SUPABASE_CONFIG is available before other scripts -->
+<!-- Load config FIRST (synchronously) so SUPABASE_CONFIG is available before other scripts -->
 <script src="config.js"></script>
+<script src="config.example.js"></script> <!-- Fallback for GitHub Pages -->
 
 <!-- Supabase JS (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
