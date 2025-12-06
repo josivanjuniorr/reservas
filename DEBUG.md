@@ -2,6 +2,46 @@
 
 ## Problema: Reservas não são salvas no banco
 
+### ⚠️ ERRO COMUM: "Could not find the 'endDate' column"
+
+Se você vê este erro no console:
+```
+❌ Erro no teste: {code: 'PGRST204', details: null, hint: null, 
+message: "Could not find the 'endDate' column of 'reservas' in the schema cache"}
+```
+
+**Causa:** A tabela foi criada com nomes de colunas em minúsculas (enddate) em vez de camelCase (endDate).
+
+**Solução:**
+
+1. Acesse o SQL Editor do Supabase: https://app.supabase.com/project/SEU_PROJECT/sql
+
+2. Execute o script `database-fix.sql` completo
+
+   OU copie e cole este comando:
+   ```sql
+   DROP TABLE IF EXISTS reservas CASCADE;
+   
+   CREATE TABLE reservas (
+     id TEXT PRIMARY KEY,
+     "guestName" TEXT NOT NULL,
+     phone TEXT,
+     "roomType" TEXT NOT NULL,
+     "startDate" DATE NOT NULL,
+     "endDate" DATE NOT NULL,
+     notes TEXT,
+     price NUMERIC(10, 2),
+     responsible TEXT,
+     "onClipboard" BOOLEAN DEFAULT false,
+     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+   );
+   ```
+
+3. Execute as políticas RLS (copie do arquivo `database.sql`)
+
+4. Recarregue a página e teste novamente
+
 ### Checklist de Verificação
 
 1. **Abra o Console do Navegador (F12)**

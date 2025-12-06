@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Reservas Hotel Padre Cícero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -12,142 +15,145 @@
   <div class="brand">
     <div class="logo">PC</div>
     <div>
-      <h1>Reservas Hotel Padre Cícero</h1>
-      <p class="lead">Sistema de gestão de reservas e ocupação</p>
+      <h1>Hotel Padre Cícero</h1>
+      <p class="lead">Sistema de Gestão de Reservas</p>
     </div>
   </div>
-  <div class="muted">Modo demonstração</div>
+  <div class="muted">✨ Versão 2.0</div>
 </header>
 
 <main class="grid">
 <!-- ESQUERDA -->
 <section class="card">
-<h2 style="color:var(--accent)">Nova Reserva</h2>
+<h2>Nova Reserva</h2>
 <form id="reservationForm">
   <div class="row">
     <div style="flex:1">
-      <label>Nome</label>
-      <input id="guestName" required placeholder="Nome do hóspede">
+      <label>👤 Nome do Hóspede</label>
+      <input id="guestName" required placeholder="Digite o nome completo">
     </div>
     <div style="width:150px">
-      <label>Telefone</label>
-      <input id="phone" placeholder="(xx) xxxxx-xxxx">
+      <label>📞 Telefone</label>
+      <input id="phone" placeholder="(00) 00000-0000">
     </div>
   </div>
   <div class="row">
     <div style="flex:1">
-      <label>Tipo de quarto</label>
+      <label>🏨 Tipo de Quarto</label>
       <select id="roomType"></select>
     </div>
     <div style="width:120px">
-      <label>Qtd</label>
+      <label>🔢 Qtd</label>
       <select><option>1 apto</option></select>
     </div>
   </div>
   <div class="row">
     <div style="flex:1">
-      <label>Entrada</label>
+      <label>📅 Data de Entrada</label>
       <input type="date" id="startDate" required>
     </div>
     <div style="flex:1">
-      <label>Saída</label>
+      <label>📅 Data de Saída</label>
       <input type="date" id="endDate" required>
     </div>
   </div>
   <div class="row">
     <div style="flex:1">
-      <label>Responsável</label>
+      <label>👔 Responsável</label>
       <input id="responsible" placeholder="Nome do responsável">
     </div>
     <div style="width:150px">
-      <label>Valor (R$)</label>
+      <label>💰 Valor (R$)</label>
       <input type="number" id="price" step="0.01" min="0" placeholder="0,00">
     </div>
   </div>
   <div class="row">
     <div style="flex:1">
-      <label>Observação</label>
-      <textarea id="notes"></textarea>
+      <label>📝 Observações</label>
+      <textarea id="notes" placeholder="Informações adicionais sobre a reserva..."></textarea>
     </div>
   </div>
-  <div style="display:flex;gap:10px;margin-top:12px">
-    <button class="btn" type="submit">Reservar</button>
-    <button class="btn ghost" type="button" id="clearForm">Limpar</button>
-    <div id="formMsg" style="margin-left:10px;font-size:13px"></div>
+  <div style="display:flex;gap:12px;margin-top:16px">
+    <button class="btn" type="submit">✅ Confirmar Reserva</button>
+    <button class="btn ghost" type="button" id="clearForm">🔄 Limpar</button>
   </div>
+  <div id="formMsg"></div>
 
-  <hr style="margin:20px 0;border:0;border-top:1px solid #e8ecef">
-  <h3 style="color:var(--accent)">Consultar reservas por data</h3>
-  <p class="muted" style="margin-bottom:6px">Veja quantos apartamentos estarão disponíveis em uma data futura:</p>
-  <input type="date" id="queryDate" style="padding:10px;width:200px">
+  <hr style="margin:24px 0;border:0;border-top:2px solid var(--border);opacity:0.5">
+  <h3 style="color:var(--accent);margin-bottom:12px;font-size:18px">📊 Consultar Disponibilidade</h3>
+  <p style="color:var(--muted);margin-bottom:12px;font-size:14px">Veja quantos apartamentos estarão disponíveis em uma data futura:</p>
+  <input type="date" id="queryDate" style="padding:12px 16px;width:100%;max-width:250px;border:2px solid var(--border);border-radius:10px">
   <div id="futureSummary" class="availability-container"></div>
 </form>
 </section>
 
 <!-- DIREITA -->
 <section class="card">
+<h2>📋 Gerenciar Reservas</h2>
 <div class="tab-buttons">
-  <button id="tabCurrent" class="active">Reservas Atuais</button>
-  <button id="tabHistory">Histórico de Reservas</button>
+  <button id="tabCurrent" class="active">📅 Atuais e Futuras</button>
+  <button id="tabHistory">🕐 Histórico</button>
 </div>
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-  <div class="search-box">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+  <div class="search-box" style="flex:1;min-width:200px">
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" id="searchInput" placeholder="Buscar por nome...">
+    <input type="text" id="searchInput" placeholder="Buscar por nome do hóspede...">
   </div>
-  <select id="filterType" class="small"><option value="all">Filtrar: Todos</option></select>
+  <select id="filterType" style="padding:12px 16px;border:2px solid var(--border);border-radius:10px;font-size:14px"><option value="all">🏨 Todos os tipos</option></select>
 </div>
 <div id="reservationsList" style="margin-top:12px;"></div>
-<div id="historyList" style="margin-top:12px;display:none;"></div>
+<div id="historyList" style="margin-top:12px;"></div>
 </section>
 </main>
 </div>
 
 <!-- Modal de edição -->
-<div id="editModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);justify-content:center;align-items:center;z-index:1000;">
-  <div style="background:white;padding:20px;border-radius:10px;width:320px;position:relative;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
-    <h3 style="margin-top:0;color:#1b3fa0;">Editar Reserva</h3>
+<div id="editModal">
+  <div class="card">
+    <h2>✏️ Editar Reserva</h2>
     <form id="editForm">
-      <div style="margin-bottom:8px">
-        <label>Nome</label>
+      <div style="margin-bottom:12px">
+        <label>👤 Nome do Hóspede</label>
         <input type="text" id="editName" required>
       </div>
-      <div style="margin-bottom:8px">
-        <label>Telefone</label>
+      <div style="margin-bottom:12px">
+        <label>📞 Telefone</label>
         <input type="text" id="editPhone">
       </div>
-      <div style="margin-bottom:8px">
-        <label>Tipo de quarto</label>
+      <div style="margin-bottom:12px">
+        <label>🏨 Tipo de Quarto</label>
         <select id="editRoomType"></select>
       </div>
-      <div style="display:flex;gap:10px;margin-bottom:8px">
+      <div style="display:flex;gap:12px;margin-bottom:12px">
         <div style="flex:1">
-          <label>Entrada</label>
+          <label>📅 Entrada</label>
           <input type="date" id="editStartDate" required>
         </div>
         <div style="flex:1">
-          <label>Saída</label>
+          <label>📅 Saída</label>
           <input type="date" id="editEndDate" required>
         </div>
       </div>
-      <div style="margin-bottom:8px">
-        <label>Responsável</label>
+      <div style="margin-bottom:12px">
+        <label>👔 Responsável</label>
         <input type="text" id="editResponsible">
       </div>
-      <div style="margin-bottom:8px">
-        <label>Valor (R$)</label>
+      <div style="margin-bottom:12px">
+        <label>💰 Valor (R$)</label>
         <input type="number" id="editPrice" step="0.01" min="0">
       </div>
-      <div style="margin-bottom:8px">
-        <label>Observação</label>
+      <div style="margin-bottom:12px">
+        <label>📝 Observações</label>
         <textarea id="editNotes"></textarea>
       </div>
-      <div style="margin-bottom:8px">
-        <label>Na Prancheta</label>
-        <input type="checkbox" id="editOnClipboard">
+      <div style="margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <input type="checkbox" id="editOnClipboard" style="width:auto;margin:0">
+        <label style="margin:0">📋 Marcar na prancheta</label>
       </div>
-      <button class="btn" type="submit">Salvar Alteração</button>
-      <button type="button" class="btn ghost" onclick="closeEditModal()">Cancelar</button>
+      <div style="display:flex;gap:12px">
+        <button class="btn" type="submit">💾 Salvar Alterações</button>
+        <button type="button" class="btn ghost" onclick="closeEditModal()">❌ Cancelar</button>
+      </div>
     </form>
   </div>
 </div>
