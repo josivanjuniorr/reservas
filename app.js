@@ -449,7 +449,7 @@ async function showHistory(reservaId) {
       .from('reservas_audit')
       .select('*')
       .eq('reserva_id', reservaId)
-      .order('timestamp', { ascending: false });
+      .order('created_at', { ascending: false });
     
     if (error) throw error;
     
@@ -462,7 +462,7 @@ async function showHistory(reservaId) {
     let html = '<div class="history-timeline">';
     
     data.forEach((entry, index) => {
-      const date = new Date(entry.timestamp).toLocaleString('pt-BR');
+      const date = new Date(entry.created_at).toLocaleString('pt-BR');
       const actionText = {
         'INSERT': '✨ Criado',
         'UPDATE': '✏️ Editado',

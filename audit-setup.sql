@@ -16,13 +16,13 @@ CREATE TABLE IF NOT EXISTS reservas_audit (
   changed_fields JSONB,
   old_values JSONB,
   new_values JSONB,
-  timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Criar índices para melhor performance
 CREATE INDEX IF NOT EXISTS idx_audit_reserva_id ON reservas_audit(reserva_id);
 CREATE INDEX IF NOT EXISTS idx_audit_user_id ON reservas_audit(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON reservas_audit(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_created_at ON reservas_audit(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_action ON reservas_audit(action);
 
 -- 3. Habilitar RLS na tabela de auditoria
@@ -179,10 +179,10 @@ SELECT
   a.changed_fields,
   a.old_values,
   a.new_values,
-  a.timestamp
+  a.created_at
 FROM reservas_audit a
 LEFT JOIN profiles p ON a.user_id = p.id
-ORDER BY a.timestamp DESC;
+ORDER BY a.created_at DESC;
 
 -- 10. Política para ler a view
 CREATE POLICY "Usuários autenticados podem ler view auditoria" ON reservas_audit_view
@@ -198,7 +198,7 @@ RETURNS TABLE (
   user_email TEXT,
   user_name TEXT,
   changed_fields JSONB,
-  timestamp TIMESTAMP WITH TIME ZONE
+  created_at TIMESTAMP WITH TIME ZONE
 ) AS $$
 BEGIN
   RETURN QUERY
@@ -208,11 +208,11 @@ BEGIN
     a.user_email,
     p.full_name as user_name,
     a.changed_fields,
-    a.timestamp
+    a.created_at
   FROM reservas_audit a
   LEFT JOIN profiles p ON a.user_id = p.id
   WHERE a.reserva_id = p_reserva_id
-  ORDER BY a.timestamp DESC;
+  ORDER BY a.created_at DESC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -233,6 +233,6 @@ SELECT
   user_email,
   reserva_id,
   changed_fields,
-  timestamp
+  created_at
 FROM reservas_audit_view
 LIMIT 10;
