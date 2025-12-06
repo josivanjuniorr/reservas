@@ -184,13 +184,7 @@ FROM reservas_audit a
 LEFT JOIN profiles p ON a.user_id = p.id
 ORDER BY a.created_at DESC;
 
--- 10. Política para ler a view
-CREATE POLICY "Usuários autenticados podem ler view auditoria" ON reservas_audit_view
-  FOR SELECT
-  TO authenticated
-  USING (true);
-
--- Função auxiliar para obter histórico de uma reserva
+-- 10. Função auxiliar para obter histórico de uma reserva
 CREATE OR REPLACE FUNCTION get_reserva_history(p_reserva_id TEXT)
 RETURNS TABLE (
   id BIGINT,
