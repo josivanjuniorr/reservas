@@ -24,15 +24,19 @@ let sbClient = null;
 async function initSupabaseIntegration() {
   console.log('🔄 Iniciando conexão com Supabase...');
   
+  // Aguardar um pouco para garantir que config.js foi carregado
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
   if (!window.SUPABASE_CONFIG) {
     console.error('❌ SUPABASE_CONFIG não encontrado');
-    alert('AVISO: Supabase não configurado. Configure config.js com URL e anon key do Supabase.');
+    console.warn('Tentando usar dados locais sem Supabase');
+    // Não mostrar alert, apenas usar array vazio
     return;
   }
   
   if (!window.supabase) {
     console.error('❌ Biblioteca Supabase não carregada');
-    alert('ERRO: Biblioteca Supabase não foi carregada.');
+    console.warn('Continuando sem conexão ao banco de dados');
     return;
   }
   
@@ -281,6 +285,9 @@ document.getElementById('weekBtn').addEventListener('click', function() {
 
 // Inicialização
 (async function() {
+  // Aguardar mais tempo para garantir carregamento de dependências
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
   await initSupabaseIntegration();
   
   // Mostrar mensagem inicial
@@ -291,7 +298,7 @@ document.getElementById('weekBtn').addEventListener('click', function() {
 
 // Inicializar autenticação
 (async function initApp() {
-  await new Promise(resolve => setTimeout(resolve, 100));
+  await new Promise(resolve => setTimeout(resolve, 200));
   
   const isAuth = await Auth.init();
   
