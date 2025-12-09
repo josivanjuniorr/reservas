@@ -15,8 +15,6 @@ const ROOM_TYPES = [
 
 const roomTypeSelect = document.getElementById('roomType');
 const filterType = document.getElementById('filterType');
-const futureSummary = document.getElementById('futureSummary');
-const queryDate = document.getElementById('queryDate');
 const searchInput = document.getElementById('searchInput');
 const reservationsList = document.getElementById('reservationsList');
 const historyList = document.getElementById('historyList');
@@ -438,7 +436,6 @@ document.getElementById('reservationForm').addEventListener('submit', async func
   try {
     await save();
     renderReservations(filterType.value, searchInput.value);
-    renderAvailability(queryDate.value);
     msg.textContent = 'Reserva salva com sucesso!';
     msg.style.color = 'green';
     setTimeout(function() { msg.textContent = ''; }, 2000);
@@ -455,10 +452,6 @@ document.getElementById('reservationForm').addEventListener('submit', async func
 
 document.getElementById('clearForm').onclick = function() {
   document.getElementById('reservationForm').reset();
-};
-
-queryDate.onchange = function() {
-  renderAvailability(queryDate.value);
 };
 
 searchInput.oninput = function() {
@@ -494,7 +487,6 @@ window.cancelRes = async function(id) {
       alert('Erro ao excluir: ' + (e.message || 'desconhecido'));
     }
     renderReservations(filterType.value, searchInput.value);
-    renderAvailability(queryDate.value);
   }
 };
 
@@ -622,7 +614,6 @@ document.getElementById('editForm').addEventListener('submit', async function(e)
   
   await save();
   renderReservations(filterType.value, searchInput.value);
-  renderAvailability(queryDate.value);
   closeEditModal();
 });
 

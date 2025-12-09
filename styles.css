@@ -954,6 +954,67 @@ textarea {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Barra de navegação */
+.navigation-bar {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--border);
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  padding: 8px 16px;
+  border-radius: 8px;
+}
+
+.nav-link:hover {
+  background: var(--accent-light);
+  transform: translateX(-4px);
+}
+
+.nav-link svg {
+  transition: transform 0.3s ease;
+}
+
+.nav-link:hover svg {
+  transform: translateX(-4px);
+}
+
+/* Seletor de data aprimorado */
+.date-selector-enhanced {
+  background: var(--accent-light);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 2px solid var(--border);
+}
+
+.date-selector-enhanced input[type="date"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Link rápido para disponibilidade */
+.availability-quick-link {
+  margin-top: 20px;
+  transition: all 0.3s ease;
+}
+
+.availability-quick-link:hover {
+  transform: translateY(-2px);
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .grid {
