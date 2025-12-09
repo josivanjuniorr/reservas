@@ -163,26 +163,127 @@ async function save() {
 
 function renderAvailability(date) {
   futureSummary.innerHTML = '';
+  const availabilitySummary = document.getElementById('availabilitySummary');
+  if (availabilitySummary) availabilitySummary.innerHTML = '';
+  
   if (!date) return;
+  
+  // Calcular totais gerais
+  let grandTotalAvailable = 0;
+  let grandTotalRooms = 0;
   
   const categories = [...new Set(ROOM_TYPES.map(r => r.category))];
   categories.forEach(cat => {
     const card = document.createElement('div');
     card.className = 'availability-card';
     const catRooms = ROOM_TYPES.filter(r => r.category === cat);
-    card.innerHTML = '<h4>' + cat + '</h4>';
     
+    // Cabeçalho da categoria
+    const header = document.createElement('div');
+    header.className = 'availability-header';
+    header.innerHTML = '<h4>' + cat + '</h4>';
+    card.appendChild(header);
+    
+    // Calcular total da categoria
+    let totalAvailable = 0;
+    let totalRooms = 0;
+    catRooms.forEach(r => {
+      const occ = countOccupied(r.id, date);
+      totalAvailable += (r.total - occ);
+      totalRooms += r.total;
+    });
+    
+    grandTotalAvailable += totalAvailable;
+    grandTotalRooms += totalRooms;
+    
+    // Badge de resumo da categoria
+    const summary = document.createElement('div');
+    summary.className = 'category-summary';
+    const percentage = totalRooms > 0 ? Math.round((totalAvailable / totalRooms) * 100) : 0;
+    summary.innerHTML = `<span class="total-badge">${totalAvailable}/${totalRooms} disponíveis (${percentage}%)</span>`;
+    card.appendChild(summary);
+    
+    // Lista de quartos
     const ul = document.createElement('ul');
+    ul.className = 'availability-list';
     catRooms.forEach(r => {
       const occ = countOccupied(r.id, date);
       const available = r.total - occ;
+      const percentage = r.total > 0 ? (available / r.total) * 100 : 0;
+      
+      // Determinar status (verde/amarelo/vermelho)
+      let status = 'high';
+      if (percentage === 0) status = 'none';
+      else if (percentage < 30) status = 'low';
+      else if (percentage < 60) status = 'medium';
+      
       const li = document.createElement('li');
-      li.textContent = r.name + ': ' + available + ' disponíveis';
+      li.className = 'availability-item';
+      
+      const info = document.createElement('div');
+      info.className = 'room-info';
+      info.innerHTML = `
+        <span class="room-name">${r.name}</span>
+        <span class="room-count status-${status}">${available}/${r.total}</span>
+      `;
+      li.appendChild(info);
+      
+      // Barra de progresso
+      const progressBar = document.createElement('div');
+      progressBar.className = 'progress-bar';
+      const progress = document.createElement('div');
+      progress.className = `progress-fill status-${status}`;
+      progress.style.width = percentage + '%';
+      progressBar.appendChild(progress);
+      li.appendChild(progressBar);
+      
       ul.appendChild(li);
     });
     card.appendChild(ul);
     futureSummary.appendChild(card);
   });
+  
+  // Adicionar resumo geral
+  if (availabilitySummary && grandTotalRooms > 0) {
+    const grandPercentage = Math.round((grandTotalAvailable / grandTotalRooms) * 100);
+    const occupiedRooms = grandTotalRooms - grandTotalAvailable;
+    const occupancyRate = Math.round((occupiedRooms / grandTotalRooms) * 100);
+    
+    let statusClass = 'success';
+    if (grandPercentage < 30) statusClass = 'danger';
+    else if (grandPercentage < 60) statusClass = 'warning';
+    
+    const dateFormatted = fmtDate(date);
+    
+    availabilitySummary.innerHTML = `
+      <div class="summary-grid">
+        <div class="summary-card card-primary">
+          <div class="summary-icon">🏨</div>
+          <div class="summary-content">
+            <div class="summary-label">Total Disponível</div>
+            <div class="summary-value">${grandTotalAvailable}</div>
+            <div class="summary-sublabel">de ${grandTotalRooms} apartamentos</div>
+          </div>
+        </div>
+        <div class="summary-card card-${statusClass}">
+          <div class="summary-icon">📊</div>
+          <div class="summary-content">
+            <div class="summary-label">Disponibilidade</div>
+            <div class="summary-value">${grandPercentage}%</div>
+            <div class="summary-sublabel">em ${dateFormatted}</div>
+          </div>
+        </div>
+        <div class="summary-card card-info">
+          <div class="summary-icon">🛏️</div>
+          <div class="summary-content">
+            <div class="summary-label">Ocupados</div>
+            <div class="summary-value">${occupiedRooms}</div>
+            <div class="summary-sublabel">taxa de ${occupancyRate}%</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }
 
 function renderReservations(filter, search) {
