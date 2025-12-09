@@ -85,8 +85,8 @@ async function initSupabaseIntegration() {
   }
   
   // No config found
-  alert('AVISO: Supabase não configurado. Configure config.js com URL e anon key do Supabase.');
-  console.error('Supabase config missing: Copy config.example.js to config.js and fill in your Supabase credentials.');
+  console.warn('⚠ Supabase not configured. App will work in offline mode only.');
+  console.info('To enable cloud sync: Copy config.example.js → config.js and add your Supabase credentials.');
 }
 
 async function syncToSupabase() {

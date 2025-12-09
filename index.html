@@ -157,8 +157,25 @@
   </div>
 </div>
 
-<!-- Load config.js FIRST (synchronously) so SUPABASE_CONFIG is available before other scripts -->
-<script src="config.js"></script>
+<!-- Try to load config.js if available (optional - won't break if 404) -->
+<script>
+  // Pre-load config.js synchronously if it exists, silently continue if not
+  (function() {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'config.js', false); // synchronous
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        try {
+          eval(xhr.responseText);
+          console.log('✓ config.js loaded');
+        } catch(e) {
+          console.warn('config.js exists but has errors:', e);
+        }
+      }
+    };
+    try { xhr.send(); } catch(e) { /* 404 - silently continue */ }
+  })();
+</script>
 
 <!-- Supabase JS (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/umd/supabase.min.js"></script>
