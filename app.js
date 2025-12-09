@@ -689,3 +689,36 @@ ROOM_TYPES.forEach(rt => {
     console.log('✅ Usuário autenticado - carregando aplicação');
   }
 })();
+
+// Função de Backup
+async function exportBackup() {
+  if (!sbClient) {
+    alert('❌ Supabase não está configurado. Configure config.js primeiro.');
+    return;
+  }
+  
+  try {
+    console.log('📥 Iniciando backup...');
+    const { data, error } = await sbClient.from('reservas').select('*');
+    
+    if (error) throw error;
+    
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `backup-reservas-${timestamp}.json`;
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    console.log(`✅ Backup realizado: ${data.length} reservas salvas em ${filename}`);
+    alert(`✅ Backup realizado com sucesso!\n${data.length} reservas exportadas em ${filename}`);
+  } catch(e) {
+    console.error('❌ Erro ao fazer backup:', e);
+    alert('❌ Erro ao fazer backup: ' + (e.message || 'desconhecido'));
+  }
+}
