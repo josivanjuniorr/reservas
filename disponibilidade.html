@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultar Disponibilidade - Sistema de Reservas</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Tela de Login/Cadastro -->
+<div id="loginScreen" style="display:none">
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="logo">🏨</div>
+        <h2>Sistema de Reservas</h2>
+        <p>Consulta de Disponibilidade</p>
+      </div>
+
+      <!-- Formulário de Login -->
+      <form id="loginForm" class="auth-form">
+        <h3>Entrar</h3>
+        <div class="form-group">
+          <label for="loginEmail">📧 Email</label>
+          <input type="email" id="loginEmail" required placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">🔒 Senha</label>
+          <input type="password" id="loginPassword" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary">🚀 Entrar</button>
+        <div id="loginMessage" class="auth-message"></div>
+        <p class="auth-toggle">
+          Não tem conta? <a href="#" onclick="Auth.toggleMode(); return false;">Cadastre-se</a>
+        </p>
+      </form>
+
+      <!-- Formulário de Cadastro -->
+      <form id="signupForm" class="auth-form" style="display:none">
+        <h3>Criar Conta</h3>
+        <div class="form-group">
+          <label for="signupName">👤 Nome Completo</label>
+          <input type="text" id="signupName" required placeholder="Seu nome">
+        </div>
+        <div class="form-group">
+          <label for="signupEmail">📧 Email</label>
+          <input type="email" id="signupEmail" required placeholder="seu@email.com">
+        </div>
+        <div class="form-group">
+          <label for="signupPassword">🔒 Senha</label>
+          <input type="password" id="signupPassword" required placeholder="••••••••" minlength="6">
+        </div>
+        <button type="submit" class="btn btn-primary">✨ Criar Conta</button>
+        <div id="signupMessage" class="auth-message"></div>
+        <p class="auth-toggle">
+          Já tem conta? <a href="#" onclick="Auth.toggleMode(); return false;">Entrar</a>
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Aplicação Principal -->
+<div id="appScreen" style="display:none">
+  <header>
+    <div class="brand">
+      <div class="logo">🏨</div>
+      <div>
+        <h1>Sistema de Reservas</h1>
+        <p class="lead">📊 Consulta de Disponibilidade</p>
+      </div>
+    </div>
+    <div id="userInfo" class="user-info"></div>
+  </header>
+
+  <div class="wrap">
+    <div class="navigation-bar">
+      <a href="index.html" class="nav-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+        Voltar para Reservas
+      </a>
+    </div>
+
+    <main class="grid" style="grid-template-columns: 1fr; max-width: 1200px; margin: 0 auto;">
+      <section class="card">
+        <div class="availability-section">
+          <div class="section-header">
+            <h2 style="color:var(--accent);margin:0;font-size:24px;display:flex;align-items:center;gap:12px">
+              <span>📊</span> Consultar Disponibilidade
+            </h2>
+            <p style="color:var(--muted);margin:12px 0 0 0;font-size:15px">
+              Veja quantos apartamentos estarão disponíveis em uma data específica e planeje suas reservas com antecedência
+            </p>
+          </div>
+
+          <div class="date-selector-enhanced">
+            <label for="queryDate" style="font-weight:700;color:var(--text);margin-bottom:12px;display:block;font-size:16px">
+              📅 Selecione a data para consulta:
+            </label>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+              <input type="date" id="queryDate" style="padding:16px 20px;border:2px solid var(--border);border-radius:12px;font-size:16px;transition:all 0.3s ease;flex:1;min-width:250px">
+              <button id="todayBtn" class="btn ghost" style="white-space:nowrap">📅 Hoje</button>
+              <button id="tomorrowBtn" class="btn ghost" style="white-space:nowrap">➡️ Amanhã</button>
+              <button id="weekBtn" class="btn ghost" style="white-space:nowrap">📆 +7 dias</button>
+            </div>
+          </div>
+
+          <div id="availabilitySummary" class="availability-summary"></div>
+          <div id="futureSummary" class="availability-container"></div>
+
+          <div id="noDataMessage" style="text-align:center;padding:60px 20px;color:var(--muted);display:none">
+            <div style="font-size:48px;margin-bottom:16px">📅</div>
+            <h3 style="margin:0 0 8px 0;color:var(--text)">Selecione uma data</h3>
+            <p>Escolha uma data acima para visualizar a disponibilidade dos apartamentos</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="supabase-integration.js"></script>
+<script src="auth.js"></script>
+<script src="disponibilidade.js"></script>
+
+<!-- Handlers de autenticação -->
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const msg = document.getElementById('loginMessage');
+  
+  const result = await Auth.login(email, password);
+  if (result.success) {
+    msg.textContent = '✅ Login realizado com sucesso!';
+    msg.style.color = 'var(--success)';
+  } else {
+    msg.textContent = '❌ ' + (result.error || 'Erro ao fazer login');
+    msg.style.color = 'var(--danger)';
+  }
+});
+
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const name = document.getElementById('signupName').value;
+  const email = document.getElementById('signupEmail').value;
+  const password = document.getElementById('signupPassword').value;
+  const msg = document.getElementById('signupMessage');
+  
+  const result = await Auth.signup(email, password, name);
+  if (result.success) {
+    if (result.needsConfirmation) {
+      msg.textContent = '✅ ' + result.message;
+      msg.style.color = 'var(--warning)';
+    } else {
+      msg.textContent = '✅ Conta criada com sucesso!';
+      msg.style.color = 'var(--success)';
+    }
+  } else {
+    msg.textContent = '❌ ' + (result.error || 'Erro ao criar conta');
+    msg.style.color = 'var(--danger)';
+  }
+});
+</script>
+
+</body>
+</html>
