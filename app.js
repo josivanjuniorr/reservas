@@ -15,8 +15,6 @@ const ROOM_TYPES = [
 
 const roomTypeSelect = document.getElementById('roomType');
 const filterType = document.getElementById('filterType');
-const futureSummary = document.getElementById('futureSummary');
-const queryDate = document.getElementById('queryDate');
 const searchInput = document.getElementById('searchInput');
 const reservationsList = document.getElementById('reservationsList');
 const historyList = document.getElementById('historyList');
@@ -28,13 +26,31 @@ let editingId = null;
 let sbClient = null;
 
 async function initSupabaseIntegration() {
+  console.log('🔄 Iniciando conexão com Supabase...');
+  
+  // Verificar se config existe
+  if (!window.SUPABASE_CONFIG) {
+    console.error('❌ SUPABASE_CONFIG não encontrado');
+    alert('AVISO: Supabase não configurado. Configure config.js com URL e anon key do Supabase.');
+    return;
+  }
+  
+  if (!window.supabase) {
+    console.error('❌ Biblioteca Supabase não carregada');
+    alert('ERRO: Biblioteca Supabase não foi carregada.');
+    return;
+  }
+  
+  console.log('📝 Config encontrada:', { url: window.SUPABASE_CONFIG.url.substring(0, 30) + '...' });
+  
   // Supabase is now required. Try to use the wrapper first, then fallback to direct init.
   const wrapper = window.SB;
   if (wrapper && wrapper.init) {
     try {
       await wrapper.init();
-      if (wrapper.useSupabase) {
-        sbClient = wrapper.client || (window.supabase && window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey));
+      if (wrapper.useSupabase && wrapper.client) {
+        sbClient = wrapper.client;
+        console.log('✅ Usando wrapper SB.client');
         const data = await wrapper.loadAll();
         if (Array.isArray(data)) {
           reservations = data.map(r => ({
@@ -50,56 +66,69 @@ async function initSupabaseIntegration() {
             onClipboard: r.onClipboard || false
           }));
         }
-        console.log('Loaded reservations from Supabase:', reservations.length);
+        console.log('✅ Carregadas', reservations.length, 'reservas do Supabase');
         return;
       }
     } catch(e) {
-      console.error('Supabase wrapper init failed', e);
+      console.error('⚠️ Supabase wrapper init failed', e);
     }
   }
   
   // Fallback: direct init
-  if (window.SUPABASE_CONFIG && window.supabase) {
-    try {
-      sbClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
-      const { data, error } = await sbClient.from('reservas').select('*');
-      if (!error && Array.isArray(data)) {
-        reservations = data.map(r => ({
-          id: r.id,
-          guestName: r.guestName,
-          phone: r.phone,
-          roomType: r.roomType,
-          startDate: r.startDate,
-          endDate: r.endDate,
-          notes: r.notes,
-          price: r.price,
-          responsible: r.responsible,
-          onClipboard: r.onClipboard || false
-        }));
-      }
-      console.log('Supabase initialized (direct)');
-      return;
-    } catch(e) {
-      console.error('Supabase init failed', e);
+  try {
+    console.log('🔄 Inicializando Supabase diretamente...');
+    sbClient = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
+    console.log('✅ Cliente Supabase criado:', sbClient ? 'OK' : 'FALHOU');
+    
+    const { data, error } = await sbClient.from('reservas').select('*');
+    if (error) {
+      console.error('❌ Erro ao carregar reservas:', error);
+      throw error;
     }
+    
+    if (Array.isArray(data)) {
+      reservations = data.map(r => ({
+        id: r.id,
+        guestName: r.guestName,
+        phone: r.phone,
+        roomType: r.roomType,
+        startDate: r.startDate,
+        endDate: r.endDate,
+        notes: r.notes,
+        price: r.price,
+        responsible: r.responsible,
+        onClipboard: r.onClipboard || false
+      }));
+      console.log('✅ Carregadas', reservations.length, 'reservas do Supabase');
+    }
+  } catch(e) {
+    console.error('❌ Erro fatal ao inicializar Supabase:', e);
+    alert('ERRO ao conectar com Supabase: ' + (e.message || 'desconhecido'));
   }
-  
-  // No config found
-  console.warn('⚠ Supabase not configured. App will work in offline mode only.');
-  console.info('To enable cloud sync: Copy config.example.js → config.js and add your Supabase credentials.');
 }
 
 async function syncToSupabase() {
-  if (!sbClient) return;
+  if (!sbClient) {
+    console.error('❌ sbClient não está inicializado! Não é possível salvar.');
+    alert('ERRO: Conexão com Supabase não foi estabelecida. Recarregue a página.');
+    return;
+  }
   try {
+    console.log('🔄 Sincronizando', reservations.length, 'reservas com Supabase...');
     if (window.SB && window.SB.upsertMany) {
       await window.SB.upsertMany(reservations);
     } else {
-      await sbClient.from('reservas').upsert(reservations, { onConflict: 'id' });
+      const { error } = await sbClient.from('reservas').upsert(reservations, { onConflict: 'id' });
+      if (error) {
+        console.error('❌ Erro do Supabase:', error);
+        throw error;
+      }
     }
+    console.log('✅ Sincronização com Supabase concluída com sucesso');
   } catch(e) {
-    console.error('Supabase sync error', e);
+    console.error('❌ Erro ao sincronizar com Supabase:', e);
     alert('Erro ao sincronizar com Supabase: ' + (e.message || 'desconhecido'));
+    throw e;
   }
 }
 
@@ -126,32 +155,133 @@ function countOccupied(type, date) {
   ).length;
 }
 
-function save() {
-  syncToSupabase();
+async function save() {
+  await syncToSupabase();
 }
 
 function renderAvailability(date) {
   futureSummary.innerHTML = '';
+  const availabilitySummary = document.getElementById('availabilitySummary');
+  if (availabilitySummary) availabilitySummary.innerHTML = '';
+  
   if (!date) return;
+  
+  // Calcular totais gerais
+  let grandTotalAvailable = 0;
+  let grandTotalRooms = 0;
   
   const categories = [...new Set(ROOM_TYPES.map(r => r.category))];
   categories.forEach(cat => {
     const card = document.createElement('div');
     card.className = 'availability-card';
     const catRooms = ROOM_TYPES.filter(r => r.category === cat);
-    card.innerHTML = '<h4>' + cat + '</h4>';
     
+    // Cabeçalho da categoria
+    const header = document.createElement('div');
+    header.className = 'availability-header';
+    header.innerHTML = '<h4>' + cat + '</h4>';
+    card.appendChild(header);
+    
+    // Calcular total da categoria
+    let totalAvailable = 0;
+    let totalRooms = 0;
+    catRooms.forEach(r => {
+      const occ = countOccupied(r.id, date);
+      totalAvailable += (r.total - occ);
+      totalRooms += r.total;
+    });
+    
+    grandTotalAvailable += totalAvailable;
+    grandTotalRooms += totalRooms;
+    
+    // Badge de resumo da categoria
+    const summary = document.createElement('div');
+    summary.className = 'category-summary';
+    const percentage = totalRooms > 0 ? Math.round((totalAvailable / totalRooms) * 100) : 0;
+    summary.innerHTML = `<span class="total-badge">${totalAvailable}/${totalRooms} disponíveis (${percentage}%)</span>`;
+    card.appendChild(summary);
+    
+    // Lista de quartos
     const ul = document.createElement('ul');
+    ul.className = 'availability-list';
     catRooms.forEach(r => {
       const occ = countOccupied(r.id, date);
       const available = r.total - occ;
+      const percentage = r.total > 0 ? (available / r.total) * 100 : 0;
+      
+      // Determinar status (verde/amarelo/vermelho)
+      let status = 'high';
+      if (percentage === 0) status = 'none';
+      else if (percentage < 30) status = 'low';
+      else if (percentage < 60) status = 'medium';
+      
       const li = document.createElement('li');
-      li.textContent = r.name + ': ' + available + ' disponíveis';
+      li.className = 'availability-item';
+      
+      const info = document.createElement('div');
+      info.className = 'room-info';
+      info.innerHTML = `
+        <span class="room-name">${r.name}</span>
+        <span class="room-count status-${status}">${available}/${r.total}</span>
+      `;
+      li.appendChild(info);
+      
+      // Barra de progresso
+      const progressBar = document.createElement('div');
+      progressBar.className = 'progress-bar';
+      const progress = document.createElement('div');
+      progress.className = `progress-fill status-${status}`;
+      progress.style.width = percentage + '%';
+      progressBar.appendChild(progress);
+      li.appendChild(progressBar);
+      
       ul.appendChild(li);
     });
     card.appendChild(ul);
     futureSummary.appendChild(card);
   });
+  
+  // Adicionar resumo geral
+  if (availabilitySummary && grandTotalRooms > 0) {
+    const grandPercentage = Math.round((grandTotalAvailable / grandTotalRooms) * 100);
+    const occupiedRooms = grandTotalRooms - grandTotalAvailable;
+    const occupancyRate = Math.round((occupiedRooms / grandTotalRooms) * 100);
+    
+    let statusClass = 'success';
+    if (grandPercentage < 30) statusClass = 'danger';
+    else if (grandPercentage < 60) statusClass = 'warning';
+    
+    const dateFormatted = fmtDate(date);
+    
+    availabilitySummary.innerHTML = `
+      <div class="summary-grid">
+        <div class="summary-card card-primary">
+          <div class="summary-icon">🏨</div>
+          <div class="summary-content">
+            <div class="summary-label">Total Disponível</div>
+            <div class="summary-value">${grandTotalAvailable}</div>
+            <div class="summary-sublabel">de ${grandTotalRooms} apartamentos</div>
+          </div>
+        </div>
+        <div class="summary-card card-${statusClass}">
+          <div class="summary-icon">📊</div>
+          <div class="summary-content">
+            <div class="summary-label">Disponibilidade</div>
+            <div class="summary-value">${grandPercentage}%</div>
+            <div class="summary-sublabel">em ${dateFormatted}</div>
+          </div>
+        </div>
+        <div class="summary-card card-info">
+          <div class="summary-icon">🛏️</div>
+          <div class="summary-content">
+            <div class="summary-label">Ocupados</div>
+            <div class="summary-value">${occupiedRooms}</div>
+            <div class="summary-sublabel">taxa de ${occupancyRate}%</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }
 
 function renderReservations(filter, search) {
@@ -205,6 +335,30 @@ function renderReservations(filter, search) {
     notes.textContent = r.notes || '';
     div.appendChild(notes);
 
+    // Informações de auditoria
+    if (r.created_by || r.updated_by) {
+      const auditDiv = document.createElement('div');
+      auditDiv.style.fontSize = '11px';
+      auditDiv.style.color = 'var(--muted)';
+      auditDiv.style.marginTop = '8px';
+      auditDiv.style.paddingTop = '8px';
+      auditDiv.style.borderTop = '1px solid var(--border)';
+      
+      let auditText = '';
+      if (r.created_at) {
+        const createdDate = new Date(r.created_at).toLocaleString('pt-BR');
+        auditText += `📝 Criado: ${createdDate}`;
+      }
+      if (r.updated_at && r.updated_at !== r.created_at) {
+        const updatedDate = new Date(r.updated_at).toLocaleString('pt-BR');
+        auditText += auditText ? '<br>' : '';
+        auditText += `✏️ Atualizado: ${updatedDate}`;
+      }
+      
+      auditDiv.innerHTML = auditText;
+      div.appendChild(auditDiv);
+    }
+
     const buttonsDiv = document.createElement('div');
     buttonsDiv.style.display = 'flex';
     buttonsDiv.style.gap = '6px';
@@ -226,13 +380,20 @@ function renderReservations(filter, search) {
     clipBtn.textContent = clipText;
     clipBtn.onclick = function() { toggleClipboard(r.id); };
     buttonsDiv.appendChild(clipBtn);
+    
+    // Botão de histórico
+    const historyBtn = document.createElement('button');
+    historyBtn.className = 'history-btn';
+    historyBtn.textContent = '📜 Histórico';
+    historyBtn.onclick = function() { showHistory(r.id); };
+    buttonsDiv.appendChild(historyBtn);
 
     div.appendChild(buttonsDiv);
     targetList.appendChild(div);
   });
 }
 
-document.getElementById('reservationForm').addEventListener('submit', function(e) {
+document.getElementById('reservationForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   const name = document.getElementById('guestName').value.trim();
   const phone = document.getElementById('phone').value.trim();
@@ -256,7 +417,7 @@ document.getElementById('reservationForm').addEventListener('submit', function(e
     return;
   }
   
-  reservations.push({
+  const newReservation = {
     id: Math.random().toString(36).slice(2),
     guestName: name,
     phone: phone,
@@ -264,26 +425,33 @@ document.getElementById('reservationForm').addEventListener('submit', function(e
     startDate: s,
     endDate: eDate,
     notes: notes,
-    price: price,
+    price: price ? parseFloat(price) : null,
     responsible: responsible,
     onClipboard: false
-  });
+  };
   
-  save();
-  renderReservations(filterType.value, searchInput.value);
-  renderAvailability(queryDate.value);
-  msg.textContent = 'Reserva salva com sucesso!';
-  msg.style.color = 'green';
-  setTimeout(function() { msg.textContent = ''; }, 2000);
-  this.reset();
+  console.log('➕ Adicionando nova reserva:', newReservation);
+  reservations.push(newReservation);
+  
+  try {
+    await save();
+    renderReservations(filterType.value, searchInput.value);
+    msg.textContent = 'Reserva salva com sucesso!';
+    msg.style.color = 'green';
+    setTimeout(function() { msg.textContent = ''; }, 2000);
+    this.reset();
+  } catch(error) {
+    console.error('❌ Erro ao salvar reserva:', error);
+    msg.textContent = 'ERRO ao salvar: ' + (error.message || 'desconhecido');
+    msg.style.color = 'red';
+    // Remover a reserva que não foi salva
+    reservations.pop();
+    renderReservations(filterType.value, searchInput.value);
+  }
 });
 
 document.getElementById('clearForm').onclick = function() {
   document.getElementById('reservationForm').reset();
-};
-
-queryDate.onchange = function() {
-  renderAvailability(queryDate.value);
 };
 
 searchInput.oninput = function() {
@@ -319,15 +487,14 @@ window.cancelRes = async function(id) {
       alert('Erro ao excluir: ' + (e.message || 'desconhecido'));
     }
     renderReservations(filterType.value, searchInput.value);
-    renderAvailability(queryDate.value);
   }
 };
 
-function toggleClipboard(id) {
+async function toggleClipboard(id) {
   const r = reservations.find(r => r.id === id);
   if (!r) return;
   r.onClipboard = !r.onClipboard;
-  save();
+  await save();
   renderReservations(filterType.value, searchInput.value);
 }
 
@@ -352,7 +519,84 @@ function closeEditModal() {
   editingId = null;
 }
 
-document.getElementById('editForm').addEventListener('submit', function(e) {
+function closeHistoryModal() {
+  document.getElementById('historyModal').style.display = 'none';
+}
+
+// Mostrar histórico de uma reserva
+async function showHistory(reservaId) {
+  const modal = document.getElementById('historyModal');
+  const content = document.getElementById('historyContent');
+  
+  if (!sbClient) {
+    alert('Cliente Supabase não inicializado');
+    return;
+  }
+  
+  content.innerHTML = '<div style="text-align:center;padding:20px;">🔄 Carregando histórico...</div>';
+  modal.style.display = 'flex';
+  
+  try {
+    // Buscar histórico da reserva
+    const { data, error } = await sbClient
+      .from('reservas_audit')
+      .select('*')
+      .eq('reserva_id', reservaId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
+      content.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted)">📋 Nenhum histórico encontrado</div>';
+      return;
+    }
+    
+    // Renderizar histórico
+    let html = '<div class="history-timeline">';
+    
+    data.forEach((entry, index) => {
+      const date = new Date(entry.created_at).toLocaleString('pt-BR');
+      const actionText = {
+        'INSERT': '✨ Criado',
+        'UPDATE': '✏️ Editado',
+        'DELETE': '🗑️ Excluído'
+      }[entry.action] || entry.action;
+      
+      html += `
+        <div class="history-item">
+          <div class="history-header">
+            <span class="history-action">${actionText}</span>
+            <span class="history-date">${date}</span>
+          </div>
+          <div class="history-user">
+            👤 ${entry.user_email || 'Usuário desconhecido'}
+          </div>
+      `;
+      
+      // Mostrar campos alterados
+      if (entry.action === 'UPDATE' && entry.changed_fields) {
+        const fields = Object.keys(entry.changed_fields);
+        if (fields.length > 0) {
+          html += '<div class="history-changes">';
+          html += '<strong>Campos alterados:</strong> ';
+          html += fields.map(f => `<span class="field-tag">${f}</span>`).join(' ');
+          html += '</div>';
+        }
+      }
+      
+      html += '</div>';
+    });
+    
+    html += '</div>';
+    content.innerHTML = html;
+    
+  } catch (e) {
+    console.error('Erro ao carregar histórico:', e);
+    content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--danger)">❌ Erro ao carregar histórico: ${e.message}</div>`;
+  }
+}
+
+document.getElementById('editForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   if (!editingId) return;
   const r = reservations.find(r => r.id === editingId);
@@ -368,9 +612,8 @@ document.getElementById('editForm').addEventListener('submit', function(e) {
   r.notes = document.getElementById('editNotes').value.trim();
   r.onClipboard = document.getElementById('editOnClipboard').checked;
   
-  save();
+  await save();
   renderReservations(filterType.value, searchInput.value);
-  renderAvailability(queryDate.value);
   closeEditModal();
 });
 
@@ -391,105 +634,58 @@ ROOM_TYPES.forEach(rt => {
   filterType.appendChild(opt3);
 });
 
-// Backup functions
-async function exportBackup() {
-  if (!sbClient) {
-    alert('Supabase não está configurado. Configure config.js primeiro.');
-    return;
-  }
-  
-  try {
-    const { data, error } = await sbClient.from('reservas').select('*');
-    if (error) throw error;
-    
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const filename = `backup-reservas-${timestamp}.json`;
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    // Salvar timestamp do último backup
-    localStorage.setItem('last_backup_date', new Date().toISOString());
-    console.log(`Backup realizado: ${data.length} reservas salvas em ${filename}`);
-    alert(`✓ Backup realizado com sucesso!\n${data.length} reservas exportadas.`);
-  } catch(e) {
-    console.error('Erro ao fazer backup:', e);
-    alert('Erro ao fazer backup: ' + (e.message || 'desconhecido'));
-  }
-}
-
-async function importBackup(event) {
-  if (!sbClient) {
-    alert('Supabase não está configurado. Configure config.js primeiro.');
-    return;
-  }
-  
-  const file = event.target.files[0];
-  if (!file) return;
-  
-  if (!confirm(`Deseja restaurar reservas do arquivo ${file.name}?\n\nATENÇÃO: Isto irá adicionar/atualizar reservas no banco. Dados existentes com mesmo ID serão substituídos.`)) {
-    event.target.value = '';
-    return;
-  }
-  
-  const reader = new FileReader();
-  reader.onload = async function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      
-      if (!Array.isArray(data)) {
-        throw new Error('Arquivo inválido: esperado um array de reservas.');
-      }
-      
-      // Upsert no Supabase
-      const { error } = await sbClient.from('reservas').upsert(data, { onConflict: 'id' });
-      if (error) throw error;
-      
-      // Recarregar dados
-      await initSupabaseIntegration();
-      renderReservations(filterType.value, searchInput.value);
-      
-      console.log(`Restauração concluída: ${data.length} reservas importadas`);
-      alert(`✓ Restauração concluída!\n${data.length} reservas importadas/atualizadas.`);
-    } catch(e) {
-      console.error('Erro ao restaurar backup:', e);
-      alert('Erro ao restaurar backup: ' + (e.message || 'desconhecido'));
-    }
-    event.target.value = '';
-  };
-  reader.readAsText(file);
-}
-
-async function autoBackupCheck() {
-  const lastBackup = localStorage.getItem('last_backup_date');
-  const now = new Date();
-  
-  if (!lastBackup) {
-    console.log('Nenhum backup anterior detectado. Considere fazer um backup manual.');
-    return;
-  }
-  
-  const lastBackupDate = new Date(lastBackup);
-  const hoursSinceBackup = (now - lastBackupDate) / (1000 * 60 * 60);
-  
-  // Se passou mais de 24h desde o último backup, fazer backup automático
-  if (hoursSinceBackup >= 24) {
-    console.log(`Último backup há ${Math.floor(hoursSinceBackup)}h. Iniciando backup automático...`);
-    await exportBackup();
-  } else {
-    console.log(`Último backup: ${lastBackupDate.toLocaleString('pt-BR')} (${Math.floor(hoursSinceBackup)}h atrás)`);
-  }
-}
-
 (async function() {
   await initSupabaseIntegration();
   renderReservations();
-  // Verificar se precisa fazer backup automático
-  setTimeout(autoBackupCheck, 2000);
+  
+  // Teste de conexão
+  console.log('🧪 Testando conexão com Supabase...');
+  console.log('sbClient:', sbClient ? '✅ Inicializado' : '❌ NULL');
+  console.log('window.SUPABASE_CONFIG:', window.SUPABASE_CONFIG ? '✅ Presente' : '❌ Ausente');
+  console.log('window.supabase:', typeof window.supabase !== 'undefined' ? '✅ Carregado' : '❌ Não carregado');
+  
+  // Função global para testar salvamento
+  window.testSupabase = async function() {
+    console.log('🧪 Iniciando teste de salvamento...');
+    const testReservation = {
+      id: 'test-' + Date.now(),
+      guestName: 'Teste',
+      phone: '123',
+      roomType: 'duplo',
+      startDate: '2025-12-10',
+      endDate: '2025-12-11',
+      notes: 'Teste de conexão',
+      price: 100,
+      responsible: 'Admin',
+      onClipboard: false
+    };
+    
+    try {
+      const { data, error } = await sbClient.from('reservas').insert([testReservation]);
+      if (error) {
+        console.error('❌ Erro no teste:', error);
+      } else {
+        console.log('✅ Teste bem-sucedido! Dados salvos:', data);
+      }
+    } catch(e) {
+      console.error('❌ Exceção no teste:', e);
+    }
+  };
+  
+  console.log('💡 Dica: Execute window.testSupabase() no console para testar a conexão');
+})();
+
+// Inicializar autenticação quando o DOM estiver pronto
+(async function initApp() {
+  // Aguardar inicialização do Supabase
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Inicializar autenticação
+  const isAuth = await Auth.init();
+  
+  if (!isAuth) {
+    console.log('ℹ️ Usuário não autenticado - mostrando login');
+  } else {
+    console.log('✅ Usuário autenticado - carregando aplicação');
+  }
 })();

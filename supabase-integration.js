@@ -13,12 +13,12 @@
         global.SB.client = window.supabase.createClient(window.SUPABASE_CONFIG.url, window.SUPABASE_CONFIG.anonKey);
         global.SB.useSupabase = true;
         global.SB.initialized = true;
-        console.log('✓ Supabase client initialized');
+        console.log('Supabase client initialized');
       } catch(e){
         console.warn('Failed to initialize Supabase client', e);
       }
     } else {
-      console.log('ℹ Supabase not configured (config.js not found). App will work in offline mode.');
+      console.log('Supabase config not found; using localStorage fallback. Copy config.example.js → config.js to enable.');
     }
   }
 
