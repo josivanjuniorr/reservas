@@ -150,6 +150,11 @@ function fmtDate(s) {
   return `${d}/${m}/${y}`;
 }
 
+// Função para salvar no Supabase
+async function save() {
+  await syncToSupabase();
+}
+
 function renderReservations(filter, search) {
   if (filter === undefined) filter = 'all';
   if (search === undefined) search = '';
