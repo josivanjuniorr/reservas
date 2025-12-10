@@ -15,6 +15,7 @@ const ROOM_TYPES = [
 
 const roomTypeSelect = document.getElementById('roomType');
 const filterType = document.getElementById('filterType');
+const sortOrder = document.getElementById('sortOrder');
 const searchInput = document.getElementById('searchInput');
 const reservationsList = document.getElementById('reservationsList');
 const historyList = document.getElementById('historyList');
@@ -132,156 +133,90 @@ async function syncToSupabase() {
   }
 }
 
-function parseDate(s) {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function fmtDate(s) {
-  if (!s) return '';
-  const [y, m, d] = s.split('-');
-  return d + '/' + m + '/' + y;
-}
-
-function datesOverlap(a1, a2, b1, b2) {
-  return a1 < b2 && b1 < a2;
-}
-
-function countOccupied(type, date) {
-  const target = parseDate(date);
-  const next = new Date(target.getTime() + 86400000);
-  return reservations.filter(r => 
-    r.roomType === type && datesOverlap(target, next, parseDate(r.startDate), parseDate(r.endDate))
-  ).length;
-}
-
-async function save() {
-  await syncToSupabase();
-}
-
-function renderAvailability(date) {
-  futureSummary.innerHTML = '';
-  const availabilitySummary = document.getElementById('availabilitySummary');
-  if (availabilitySummary) availabilitySummary.innerHTML = '';
+function renderReservations(filter, search) {
+  if (filter === undefined) filter = 'all';
+  if (search === undefined) search = '';
   
-  if (!date) return;
-  
-  // Calcular totais gerais
-  let grandTotalAvailable = 0;
-  let grandTotalRooms = 0;
-  
-  const categories = [...new Set(ROOM_TYPES.map(r => r.category))];
-  categories.forEach(cat => {
-    const card = document.createElement('div');
-    card.className = 'availability-card';
-    const catRooms = ROOM_TYPES.filter(r => r.category === cat);
-    
-    // Cabeçalho da categoria
-    const header = document.createElement('div');
-    header.className = 'availability-header';
-    header.innerHTML = '<h4>' + cat + '</h4>';
-    card.appendChild(header);
-    
-    // Calcular total da categoria
-    let totalAvailable = 0;
-    let totalRooms = 0;
-    catRooms.forEach(r => {
-      const occ = countOccupied(r.id, date);
-      totalAvailable += (r.total - occ);
-      totalRooms += r.total;
-    });
-    
-    grandTotalAvailable += totalAvailable;
-    grandTotalRooms += totalRooms;
-    
-    // Badge de resumo da categoria
-    const summary = document.createElement('div');
-    summary.className = 'category-summary';
-    const percentage = totalRooms > 0 ? Math.round((totalAvailable / totalRooms) * 100) : 0;
-    summary.innerHTML = `<span class="total-badge">${totalAvailable}/${totalRooms} disponíveis (${percentage}%)</span>`;
-    card.appendChild(summary);
-    
-    // Lista de quartos
-    const ul = document.createElement('ul');
-    ul.className = 'availability-list';
-    catRooms.forEach(r => {
-      const occ = countOccupied(r.id, date);
-      const available = r.total - occ;
-      const percentage = r.total > 0 ? (available / r.total) * 100 : 0;
-      
-      // Determinar status (verde/amarelo/vermelho)
-      let status = 'high';
-      if (percentage === 0) status = 'none';
-      else if (percentage < 30) status = 'low';
-      else if (percentage < 60) status = 'medium';
-      
-      const li = document.createElement('li');
-      li.className = 'availability-item';
-      
-      const info = document.createElement('div');
-      info.className = 'room-info';
-      info.innerHTML = `
-        <span class="room-name">${r.name}</span>
-        <span class="room-count status-${status}">${available}/${r.total}</span>
-      `;
-      li.appendChild(info);
-      
-      // Barra de progresso
-      const progressBar = document.createElement('div');
-      progressBar.className = 'progress-bar';
-      const progress = document.createElement('div');
-      progress.className = `progress-fill status-${status}`;
-      progress.style.width = percentage + '%';
-      progressBar.appendChild(progress);
-      li.appendChild(progressBar);
-      
-      ul.appendChild(li);
-    });
-    card.appendChild(ul);
-    futureSummary.appendChild(card);
+  reservationsList.innerHTML = '';
+  historyList.innerHTML = '';
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const lowerSearch = search.toLowerCase();
+  const order = sortOrder ? sortOrder.value : 'asc';
+
+  // Ordenar por data de entrada
+  const sorted = [...reservations].sort((a, b) => {
+    const sa = parseDate(a.startDate).getTime();
+    const sb = parseDate(b.startDate).getTime();
+    return order === 'desc' ? sb - sa : sa - sb;
   });
-  
-  // Adicionar resumo geral
-  if (availabilitySummary && grandTotalRooms > 0) {
-    const grandPercentage = Math.round((grandTotalAvailable / grandTotalRooms) * 100);
-    const occupiedRooms = grandTotalRooms - grandTotalAvailable;
-    const occupancyRate = Math.round((occupiedRooms / grandTotalRooms) * 100);
+
+  sorted.forEach(r => {
+    const start = parseDate(r.startDate);
+    const targetList = start < today ? historyList : reservationsList;
+
+    if (filter !== 'all' && r.roomType !== filter && targetList === reservationsList) return;
+    if (lowerSearch && !r.guestName.toLowerCase().includes(lowerSearch) && targetList === reservationsList) return;
+
+    const div = document.createElement('div');
+    div.className = 'reservation-card';
+    if (start.getTime() === today.getTime()) div.classList.add('today');
+    if (r.onClipboard) div.classList.add('on-clipboard');
+
+    const roomName = ROOM_TYPES.find(rt => rt.id === r.roomType) ? ROOM_TYPES.find(rt => rt.id === r.roomType).name : r.roomType;
+    const price = r.price ? Number(r.price).toFixed(2).replace('.', ',') : '-';
+    const clipText = r.onClipboard ? 'Na Prancheta ✔' : 'Marcar Prancheta';
     
-    let statusClass = 'success';
-    if (grandPercentage < 30) statusClass = 'danger';
-    else if (grandPercentage < 60) statusClass = 'warning';
-    
-    const dateFormatted = fmtDate(date);
-    
-    availabilitySummary.innerHTML = `
-      <div class="summary-grid">
-        <div class="summary-card card-primary">
-          <div class="summary-icon">🏨</div>
-          <div class="summary-content">
-            <div class="summary-label">Total Disponível</div>
-            <div class="summary-value">${grandTotalAvailable}</div>
-            <div class="summary-sublabel">de ${grandTotalRooms} apartamentos</div>
-          </div>
-        </div>
-        <div class="summary-card card-${statusClass}">
-          <div class="summary-icon">📊</div>
-          <div class="summary-content">
-            <div class="summary-label">Disponibilidade</div>
-            <div class="summary-value">${grandPercentage}%</div>
-            <div class="summary-sublabel">em ${dateFormatted}</div>
-          </div>
-        </div>
-        <div class="summary-card card-info">
-          <div class="summary-icon">🛏️</div>
-          <div class="summary-content">
-            <div class="summary-label">Ocupados</div>
-            <div class="summary-value">${occupiedRooms}</div>
-            <div class="summary-sublabel">taxa de ${occupancyRate}%</div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
+    const h4 = document.createElement('h4');
+    h4.textContent = r.guestName + ' (' + (r.phone || '') + ')';
+    div.appendChild(h4);
+
+    const resp = document.createElement('div');
+    resp.textContent = 'Responsável: ' + (r.responsible || '-');
+    div.appendChild(resp);
+
+    const room = document.createElement('div');
+    room.textContent = roomName;
+    div.appendChild(room);
+
+    const dates = document.createElement('div');
+    dates.textContent = fmtDate(r.startDate) + ' ➜ ' + fmtDate(r.endDate);
+    div.appendChild(dates);
+
+    const priceDiv = document.createElement('div');
+    priceDiv.textContent = 'R$ ' + price;
+    div.appendChild(priceDiv);
+
+    const notes = document.createElement('div');
+    notes.textContent = r.notes || '';
+    div.appendChild(notes);
+
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.style.display = 'flex';
+    buttonsDiv.style.gap = '6px';
+    buttonsDiv.style.flexWrap = 'wrap';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'edit-btn';
+    editBtn.textContent = 'Editar';
+    editBtn.onclick = function() { editRes(r.id); };
+    buttonsDiv.appendChild(editBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Excluir';
+    delBtn.onclick = function() { cancelRes(r.id); };
+    buttonsDiv.appendChild(delBtn);
+
+    const clipBtn = document.createElement('button');
+    clipBtn.className = 'prancheta-btn';
+    clipBtn.textContent = clipText;
+    clipBtn.onclick = function() { toggleClipboard(r.id); };
+    buttonsDiv.appendChild(clipBtn);
+
+    div.appendChild(buttonsDiv);
+    targetList.appendChild(div);
+  });
 }
 
 function renderReservations(filter, search) {
@@ -294,8 +229,16 @@ function renderReservations(filter, search) {
   today.setHours(0, 0, 0, 0);
 
   const lowerSearch = search.toLowerCase();
+  const order = sortOrder ? sortOrder.value : 'asc';
 
-  reservations.forEach(r => {
+  // Ordenar por data de entrada
+  const sorted = [...reservations].sort((a, b) => {
+    const sa = parseDate(a.startDate).getTime();
+    const sb = parseDate(b.startDate).getTime();
+    return order === 'desc' ? sb - sa : sa - sb;
+  });
+
+  sorted.forEach(r => {
     const start = parseDate(r.startDate);
     const targetList = start < today ? historyList : reservationsList;
 
@@ -457,6 +400,12 @@ document.getElementById('clearForm').onclick = function() {
 searchInput.oninput = function() {
   renderReservations(filterType.value, searchInput.value);
 };
+
+if (sortOrder) {
+  sortOrder.onchange = function() {
+    renderReservations(filterType.value, searchInput.value);
+  };
+}
 
 tabCurrent.onclick = function() {
   tabCurrent.classList.add('active');
