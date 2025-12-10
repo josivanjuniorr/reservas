@@ -133,6 +133,23 @@ async function syncToSupabase() {
   }
 }
 
+// Utilidades de data
+function parseDate(s) {
+  if (!s) return new Date(NaN);
+  const parts = s.split('-');
+  if (parts.length !== 3) return new Date(NaN);
+  const [y, m, d] = parts.map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function fmtDate(s) {
+  if (!s) return '';
+  const parts = s.split('-');
+  if (parts.length !== 3) return s;
+  const [y, m, d] = parts;
+  return `${d}/${m}/${y}`;
+}
+
 function renderReservations(filter, search) {
   if (filter === undefined) filter = 'all';
   if (search === undefined) search = '';
